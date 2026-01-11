@@ -1,0 +1,29 @@
+# Visual Studio
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.suo
+*.user
+*.ncb
+*.aps
+*.sdf
+*.opensdf
+*.ipch
+Debug/
+Release/
+x64/
+x86/
+.vs/
+
+# Build outputs
+*.log
+nul
+
+# Backup files
+*.bak
+*.orig
