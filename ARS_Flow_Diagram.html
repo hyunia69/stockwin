@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARS 시나리오 흐름도</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>ALLAT ARS 시나리오 흐름도</h1>
+    <div class="mermaid">
+flowchart TD
+    subgraph START[" 시작 "]
+        A[전화 착신] --> B[jobArs<br/>szArsType=ARS]
+        B --> C[ALLAT_ArsScenarioStart]
+    end
+
+    subgraph PHONE[" 전화번호 입력 "]
+        C --> D[인사말 재생]
+        D --> E[전화번호 입력 안내]
+        E --> F[전화번호 입력<br/>010/011/016 등 검증]
+        F -->|유효| G[TTS 확인<br/>누르신 전화번호는...]
+        F -->|무효| E
+        G --> H{확인 입력}
+        H -->|1:예| I[getOrderInfo_host]
+        H -->|2:아니오| E
+    end
+
+    subgraph ORDER[" 주문정보 조회 "]
+        I --> J[ALLAT_getOrderInfo]
+        J -->|DB장애| EXIT1[시스템 장애<br/>종료]
+        J -->|주문없음| EXIT2[주문 미접수<br/>종료]
+        J -->|와우캐시완료| EXIT3[안내 후 종료]
+        J -->|정상| K{renew_flag?<br/>기존동의여부}
+    end
+
+    subgraph AGREE[" 동의 처리 "]
+        K -->|Y:기존동의| M[정기결제상태 확인]
+        K -->|N:신규| L[정보제공 동의 TTS]
+        L --> L1{동의확인}
+        L1 -->|1:동의| M
+        L1 -->|2:미동의| C
+    end
+
+    subgraph SUB_STATUS[" 정기결제 상태 분기 "]
+        M --> N{sub_status?}
+        N -->|0:첫결제| O{has_trial?}
+        N -->|1:이용중| EXIT4[이미 등록됨<br/>종료]
+        N -->|2:해지후재결제| P[무료체험 1회 안내]
+
+        O -->|Y:체험있음| Q[무료체험 안내]
+        O -->|N:체험없음| R[정기결제 금액 안내]
+
+        P --> S[상품정보 TTS]
+        Q --> S
+        R --> S
+    end
+
+    subgraph PRODUCT[" 상품 동의 "]
+        S --> T{동의/취소}
+        T -->|1:동의| U[카드번호 입력]
+        T -->|2:취소| C
+    end
+
+    subgraph CARD[" 카드정보 입력 "]
+        U --> V[카드번호 13-16자리]
+        V --> W{TTS 확인}
+        W -->|1:예| X[유효기간 입력]
+        W -->|2:아니오| V
+
+        X --> Y[MMYY 4자리]
+        Y --> Z{TTS 확인}
+        Z -->|1:예| AA{AUTH_TYPE?}
+        Z -->|2:아니오| Y
+    end
+
+    subgraph AUTH[" 인증타입 분기 "]
+        AA -->|01:비인증<br/>41:빌키비인증| AB[할부입력]
+        AA -->|02,03:구/부분인증<br/>42,43:빌키| AC[생년월일 입력]
+    end
+
+    subgraph INSTALL[" 할부 처리 "]
+        AB --> AD{금액>=5만원?}
+        AD -->|Y| AE[할부개월수 0-12]
+        AD -->|N| AF[일시불 자동설정]
+        AE --> AG{TTS 확인}
+        AG -->|1:예| AH{결제분기}
+        AG -->|2:아니오| AE
+        AF --> AH
+    end
+
+    subgraph BIRTH[" 생년월일 처리 "]
+        AC --> AI[생년월일 6자리]
+        AI --> AJ[SHA256 해시]
+        AJ --> AK{TTS 확인}
+        AK -->|1:예| AL{빌키존재?}
+        AK -->|2:아니오| AI
+    end
+
+    subgraph BILLKEY[" 빌키 분기 "]
+        AL -->|N:없음| AM[간편결제 동의]
+        AL -->|Y:있음| AN{생년월일 검증}
+
+        AM --> AO{동의선택}
+        AO -->|1:동의| AP[빌키채번]
+        AO -->|2:일반결제| AQ[일반결제 전환]
+
+        AP -->|성공| AR[결제진행]
+        AP -->|실패| EXIT5[채번실패<br/>종료]
+
+        AN -->|일치| AS{금액>0?}
+        AN -->|불일치| AT{재시도초과?}
+        AT -->|N| AI
+        AT -->|Y| EXIT6[검증실패<br/>종료]
+    end
+
+    subgraph PAYMENT[" 결제 처리 "]
+        AH -->|비인증| AU[AllatPaymemt_host<br/>일반결제]
+        AH -->|구인증| AV[비밀번호 입력]
+        AH -->|빌키있음| AS
+
+        AV --> AU
+        AQ --> AU
+        AR --> AS
+
+        AS -->|Y:유료| AX[AllatFixPaymemt_host<br/>빌키결제]
+        AS -->|N:0원| AY[승인스킵]
+    end
+
+    subgraph POST[" 결제 후처리 "]
+        AU --> AZ[ALLAT_payARS]
+        AX --> AZ
+        AY --> AZ
+
+        AZ --> BA{PaySysCd?}
+        BA -->|장애| EXIT7[시스템장애<br/>종료]
+        BA -->|정상| BB[로그저장]
+
+        BB --> BC{결과?}
+        BC -->|실패+결제성공| BD[자동취소]
+        BC -->|성공| BE{RESULTCODE?}
+
+        BD --> EXIT8[취소완료<br/>종료]
+
+        BE -->|실패| BF[TTS 실패사유]
+        BE -->|0000:성공| BG[주문상태 변경]
+
+        BF --> EXIT9[결제실패<br/>종료]
+
+        BG --> BH{결과?}
+        BH -->|실패| BD
+        BH -->|성공| BI[결제 완료]
+    end
+
+    subgraph FINISH[" 종료 "]
+        BI --> EXIT10[ALLAT_ExitSvc<br/>마지막 인사말]
+    end
+
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style EXIT10 fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    style EXIT1 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT2 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT3 fill:#fff9c4,stroke:#fbc02d
+    style EXIT4 fill:#fff9c4,stroke:#fbc02d
+    style EXIT5 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT6 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT7 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT8 fill:#ffcdd2,stroke:#d32f2f
+    style EXIT9 fill:#ffcdd2,stroke:#d32f2f
+    style BI fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    </div>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
