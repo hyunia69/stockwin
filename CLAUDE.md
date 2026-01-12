@@ -68,3 +68,8 @@ Visual Studio C++ 프로젝트입니다. 빌드 전 필요 사항:
 - 함수 포인터를 통한 호스트 애플리케이션 콜백 연결 (`info_printf`, `set_guide` 등)
 - `#pragma pack(push, 1)` 사용하여 네트워크 전문 구조체 1바이트 정렬
 - 상태 기반 ARS 흐름 제어 (switch-case 패턴)
+
+## 기타 사항
+
+- md 파일은 claudedocs 폴더 아래 생성한다. 
+- 파이선 코드나 기타 유틸리티는 utils 폴더 아래 생성한다.

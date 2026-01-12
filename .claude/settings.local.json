@@ -17,7 +17,8 @@
       "Bash(if not exist \"D:\\\\dasam\\\\stockwin\\\\code\\\\stockwinBillkey\\\\claudedocs\" mkdir \"D:\\\\dasam\\\\stockwin\\\\code\\\\stockwinBillkey\\\\claudedocs\")",
       "Bash(pip install:*)",
       "Bash(ls:*)",
-      "Bash(dir D:dasamstockwincodestockwinBillkeytmpclaude-*)"
+      "Bash(dir D:dasamstockwincodestockwinBillkeytmpclaude-*)",
+      "Bash(npm install:*)"
     ]
   }
 }
