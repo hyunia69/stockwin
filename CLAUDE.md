@@ -69,7 +69,20 @@ Visual Studio C++ 프로젝트입니다. 빌드 전 필요 사항:
 - `#pragma pack(push, 1)` 사용하여 네트워크 전문 구조체 1바이트 정렬
 - 상태 기반 ARS 흐름 제어 (switch-case 패턴)
 
+## 환경 변수
+
+프로젝트 루트의 `.env` 파일에 개발/테스트 환경 변수가 정의되어 있습니다. API 엔드포인트, 테스트용 DNIS, DB 연결 정보 등을 참조할 때 이 파일을 확인하세요.
+
+```
+.env
+├── API_DEV_URL, API_LIVE_URL  # API 엔드포인트
+├── TEST_DNIS_1, TEST_DNIS_2   # 테스트용 ARS 전화번호
+├── DB_SERVER, DB_NAME, ...    # DB 연결 정보
+└── VALID_SHOP_IDS             # 유효한 shop_id 목록
+```
+
 ## 기타 사항
 
-- md 파일은 claudedocs 폴더 아래 생성한다. 
+- md 파일은 claudedocs 폴더 아래 생성한다.
 - 파이선 코드나 기타 유틸리티는 utils 폴더 아래 생성한다.
+- `.env` 파일은 git에 커밋하지 않는다 (.gitignore에 추가 권장).

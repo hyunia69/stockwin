@@ -30,3 +30,8 @@ nul
 
 # Claude Code temp files
 tmpclaude-*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
