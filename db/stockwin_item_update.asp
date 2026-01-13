@@ -3,6 +3,107 @@
 ' ============================================
 ' StockWin 결제 시나리오 등록 API
 ' ============================================
+' 인코딩 처리:
+'   - Client 요청: UTF-8 (필수)
+'   - Response 응답: UTF-8
+'   - DB 저장: EUC-KR (varchar 컬럼, SQL Server 자동 변환)
+' ============================================
+
+Response.CharSet="UTF-8"
+Response.ContentType="text/html;charset=UTF-8"
+
+' ============================================
+' UTF-8 POST 데이터 처리 함수들
+' ============================================
+
+' 바이너리를 문자열로 변환
+Function BinaryToString(Binary)
+    Dim i, s
+    s = ""
+    For i = 1 To LenB(Binary)
+        s = s & Chr(AscB(MidB(Binary, i, 1)))
+    Next
+    BinaryToString = s
+End Function
+
+' UTF-8 URL 디코딩 함수
+Function UrlDecodeUTF8(ByVal str)
+    Dim i, s, B, ub, UtfB, UtfB1, UtfB2, UtfB3
+    s = ""
+    i = 1
+    Do While i <= Len(str)
+        B = Mid(str, i, 1)
+        Select Case B
+            Case "+"
+                s = s & " "
+                i = i + 1
+            Case "%"
+                If i + 2 <= Len(str) Then
+                    ub = Mid(str, i + 1, 2)
+                    UtfB = CInt("&H" & ub)
+                    If UtfB < 128 Then
+                        s = s & ChrW(UtfB)
+                        i = i + 3
+                    ElseIf (UtfB And &HE0) = &HC0 Then
+                        ' 2바이트 UTF-8
+                        UtfB1 = (UtfB And &H1F) * &H40
+                        UtfB2 = CInt("&H" & Mid(str, i + 4, 2)) And &H3F
+                        s = s & ChrW(UtfB1 Or UtfB2)
+                        i = i + 6
+                    ElseIf (UtfB And &HF0) = &HE0 Then
+                        ' 3바이트 UTF-8 (한글)
+                        UtfB1 = (UtfB And &H0F) * &H1000
+                        UtfB2 = (CInt("&H" & Mid(str, i + 4, 2)) And &H3F) * &H40
+                        UtfB3 = CInt("&H" & Mid(str, i + 7, 2)) And &H3F
+                        s = s & ChrW(UtfB1 Or UtfB2 Or UtfB3)
+                        i = i + 9
+                    Else
+                        s = s & B
+                        i = i + 1
+                    End If
+                Else
+                    s = s & B
+                    i = i + 1
+                End If
+            Case Else
+                s = s & B
+                i = i + 1
+        End Select
+    Loop
+    UrlDecodeUTF8 = s
+End Function
+
+' POST 파라미터 파싱 (raw 데이터에서)
+Function GetPostParam(rawData, paramName)
+    Dim params, param, pos, pName, pValue
+    GetPostParam = ""
+    params = Split(rawData, "&")
+    For Each param In params
+        pos = InStr(param, "=")
+        If pos > 0 Then
+            pName = Left(param, pos - 1)
+            pValue = Mid(param, pos + 1)
+            If pName = paramName Then
+                GetPostParam = UrlDecodeUTF8(pValue)
+                Exit Function
+            End If
+        End If
+    Next
+End Function
+
+' Raw POST 데이터 읽기
+Dim rawPostData, postBytes
+If Request.TotalBytes > 0 Then
+    postBytes = Request.BinaryRead(Request.TotalBytes)
+    rawPostData = BinaryToString(postBytes)
+Else
+    rawPostData = ""
+End If
+%>
+<%
+' ============================================
+' 설정 및 파라미터 처리
+' ============================================
 
 Dim strConnect
 strConnect = "Provider=SQLOLEDB.1;Password=medi@ford;Persist Security Info=True;User ID=sa;Initial Catalog=arspg_web;Data Source=211.196.157.121"
@@ -12,18 +113,18 @@ MODE_VALUE = "hangung2^alphago_hankyung"
 PG_CODE_VALUE = "allat"
 DLL_NAME_VALUE = "ALLAT_StockWin_Billkey_Easy_New_Scenario.dll"
 
-' 요청 파라미터 수신
+' 요청 파라미터 수신 (Raw POST 데이터에서 직접 파싱)
 Dim strMode, shop_id, ars_tel_no, scenario_type, arrribute_type
 Dim amount, cc_pord_desc, startdtm
 
-strMode = Trim(Request.Form("mode"))
-shop_id = Trim(Request.Form("shop_id"))
-ars_tel_no = Trim(Request.Form("ars_tel_no"))
-scenario_type = Trim(Request.Form("scenario_type"))
-arrribute_type = Trim(Request.Form("arrribute_type"))
-amount = Trim(Request.Form("amount"))
-cc_pord_desc = Trim(Request.Form("cc_pord_desc"))
-startdtm = Trim(Request.Form("startdtm"))
+strMode = Trim(GetPostParam(rawPostData, "mode"))
+shop_id = Trim(GetPostParam(rawPostData, "shop_id"))
+ars_tel_no = Trim(GetPostParam(rawPostData, "ars_tel_no"))
+scenario_type = Trim(GetPostParam(rawPostData, "scenario_type"))
+arrribute_type = Trim(GetPostParam(rawPostData, "arrribute_type"))
+amount = Trim(GetPostParam(rawPostData, "amount"))
+cc_pord_desc = Trim(GetPostParam(rawPostData, "cc_pord_desc"))
+startdtm = Trim(GetPostParam(rawPostData, "startdtm"))
 
 ' mode 검증
 If strMode <> MODE_VALUE Then
