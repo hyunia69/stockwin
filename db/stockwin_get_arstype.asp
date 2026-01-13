@@ -123,5 +123,5 @@ Set typeDict = Nothing
 ' 성공 응답
 ' ============================================
 
-Response.Write ars_tel_no & "|" & type_cd_list & "|0000|결제유형획득에 성공하셨습니다. 여러개의 결제 유형이 배정된 경우, 페이엠솔루션과 협의하시기 바랍니다."
+Response.Write ars_tel_no & "|" & type_cd_list & "|0000|결제유형획득에 성공하셨습니다."
 %>

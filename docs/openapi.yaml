@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: StockWin ARS API
+  description: ARS 결제 시스템 연동 API
+  version: 1.0.0
+  contact:
+    name: 다삼솔루션
+
+servers:
+  - url: https://www.arspg.co.kr/ars/allat/dev/db
+    description: 개발 서버
+  - url: https://www.arspg.co.kr/ars/allat/db
+    description: 운영 서버
+
+paths:
+  /stockwin_get_arstype.asp:
+    get:
+      summary: 결제유형 조회
+      description: ARS 전화번호에 배정된 결제유형을 조회합니다.
+      operationId: getArsType
+      parameters:
+        - name: mode
+          in: query
+          required: true
+          description: 인증 모드 (고정값)
+          schema:
+            type: string
+            default: hangung2^alphago_hankyung
+        - name: ars_tel_no
+          in: query
+          required: true
+          description: ARS 전화번호 (4자리)
+          schema:
+            type: string
+            example: "6690"
+      responses:
+        '200':
+          description: 성공
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                success:
+                  value: "2972|CQS|0000|결제유형획득에 성공하셨습니다."
+                multiple:
+                  value: "2972|CQS,CIP|0000|결제유형획득에 성공하셨습니다."
+                notfound:
+                  value: "9999||9002|해당 전화번호를 찾을 수 없습니다."
+
+  /stockwin_item_update.asp:
+    post:
+      summary: 시나리오 등록
+      description: 결제 시나리오를 등록하거나 수정합니다.
+      operationId: updateItem
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - mode
+                - shop_id
+                - ars_tel_no
+                - scenario_type
+                - arrribute_type
+                - amount
+                - cc_pord_desc
+              properties:
+                mode:
+                  type: string
+                  description: 인증 모드 (고정값)
+                  default: hangung2^alphago_hankyung
+                shop_id:
+                  type: string
+                  description: PG사 결제 ID
+                  enum:
+                    - arsstockwin
+                    - arsstockwin1
+                    - arsstockwin2
+                ars_tel_no:
+                  type: string
+                  description: ARS 전화번호 (4자리)
+                  example: "6690"
+                scenario_type:
+                  type: string
+                  description: 시나리오 유형
+                  enum:
+                    - CQS
+                    - CIP
+                arrribute_type:
+                  type: string
+                  description: 시나리오 속성
+                  enum:
+                    - 1MINTHSEAL
+                    - 1MONTH
+                    - 1WEEK
+                    - 2WEEK
+                    - NOFREE
+                    - ADVRESERVD
+                    - EDUCATION
+                    - SERVICE
+                amount:
+                  type: string
+                  description: 결제/안내 금액
+                  example: "99000"
+                cc_pord_desc:
+                  type: string
+                  description: 상품 정보 (상품명^상품코드)
+                  example: "프리미엄종목^PROD001"
+                startdtm:
+                  type: string
+                  description: 사전예약 시작일시 (ADVRESERVD일 때 필수, YYYYMMDDHHMM)
+                  example: "202601200900"
+      responses:
+        '200':
+          description: 성공
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                success:
+                  value: "2972|PROD001|0000|등록이 완료되었습니다."
+                error:
+                  value: "2972||0004|유효하지 않은 scenario_type입니다."
+
+components:
+  schemas:
+    ErrorCodes:
+      type: string
+      description: |
+        에러 코드 목록:
+        - 0000: 성공
+        - 0001: mode 값 오류
+        - 0002: shop_id 누락/오류
+        - 0003: ars_tel_no 누락
+        - 0004: scenario_type 오류
+        - 0005: arrribute_type 누락
+        - 0006: amount 누락
+        - 0007: cc_pord_desc 누락
+        - 0008: startdtm 누락 (ADVRESERVD)
+        - 9001: 데이터베이스 오류
+        - 9002: 전화번호 미등록
+
+    PaymentType:
+      type: string
+      description: |
+        결제유형 코드:
+        - CQS: 정기결제용 (자동 CID 인식)
+        - CIP: 일반/간편결제용
+        - NDY: 결제유형 미지정
+
+    ShopId:
+      type: string
+      description: |
+        shop_id 유형:
+        - arsstockwin2: 정기결제 (빌키 발급)
+        - arsstockwin1: 간편결제
+        - arsstockwin: 일반결제

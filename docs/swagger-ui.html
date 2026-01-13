@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockWin ARS API - Swagger UI</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #171717;
+            --bg-tertiary: #222222;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6b6b6b;
+            --accent: #5e6ad2;
+            --accent-hover: #7c85e0;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --border: #2a2a2a;
+            --code-bg: #1a1a1a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-primary);
+        }
+
+        /* Hide default topbar */
+        .swagger-ui .topbar {
+            display: none;
+        }
+
+        /* Main wrapper */
+        .swagger-ui {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+        }
+
+        .swagger-ui .wrapper {
+            max-width: 1000px;
+            padding: 40px 24px;
+        }
+
+        /* Info section */
+        .swagger-ui .info {
+            margin: 0 0 40px 0;
+        }
+
+        .swagger-ui .info .title {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .swagger-ui .info .description p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .swagger-ui .info .base-url {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: var(--accent);
+        }
+
+        /* Servers dropdown */
+        .swagger-ui .scheme-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            box-shadow: none;
+        }
+
+        .swagger-ui .scheme-container .schemes > label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .swagger-ui select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .swagger-ui select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Operation blocks */
+        .swagger-ui .opblock {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: none;
+        }
+
+        .swagger-ui .opblock .opblock-summary {
+            border: none;
+            padding: 12px 16px;
+        }
+
+        .swagger-ui .opblock.opblock-get {
+            background: var(--bg-secondary);
+            border-color: var(--border);
+        }
+
+        .swagger-ui .opblock.opblock-get .opblock-summary-method {
+            background: #22c55e20;
+            color: #4ade80;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            min-width: auto;
+        }
+
+        .swagger-ui .opblock.opblock-post {
+            background: var(--bg-secondary);
+            border-color: var(--border);
+        }
+
+        .swagger-ui .opblock.opblock-post .opblock-summary-method {
+            background: #3b82f620;
+            color: #60a5fa;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            min-width: auto;
+        }
+
+        .swagger-ui .opblock .opblock-summary-path {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .swagger-ui .opblock .opblock-summary-path__deprecated {
+            color: var(--text-muted);
+        }
+
+        .swagger-ui .opblock .opblock-summary-description {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Expanded operation */
+        .swagger-ui .opblock .opblock-body {
+            background: var(--bg-tertiary);
+        }
+
+        .swagger-ui .opblock-body pre.microlight {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+        }
+
+        /* Parameters table */
+        .swagger-ui .opblock .opblock-section-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+        }
+
+        .swagger-ui .opblock .opblock-section-header h4 {
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .swagger-ui .opblock .opblock-section-header label {
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui table tbody tr td {
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px 0;
+        }
+
+        .swagger-ui table thead tr td,
+        .swagger-ui table thead tr th {
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 0;
+        }
+
+        .swagger-ui .parameter__name {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .swagger-ui .parameter__name.required::after {
+            color: var(--error);
+        }
+
+        .swagger-ui .parameter__type {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .swagger-ui .parameter__in {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        /* Input fields */
+        .swagger-ui input[type="text"],
+        .swagger-ui textarea {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+        }
+
+        .swagger-ui input[type="text"]:focus,
+        .swagger-ui textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Buttons */
+        .swagger-ui .btn {
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+
+        .swagger-ui .btn.execute {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .swagger-ui .btn.execute:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .swagger-ui .btn.cancel {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui .btn.cancel:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
+        .swagger-ui .btn-group .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui .btn-group .btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Try it out button */
+        .swagger-ui .try-out__btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .swagger-ui .try-out__btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Response section */
+        .swagger-ui .responses-inner {
+            padding: 16px 20px;
+        }
+
+        .swagger-ui .responses-inner h4,
+        .swagger-ui .responses-inner h5 {
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .swagger-ui .response-col_status {
+            color: var(--success);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .swagger-ui .response-col_description {
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui .response-col_links {
+            color: var(--text-muted);
+        }
+
+        /* Code/Example tabs */
+        .swagger-ui .tab li {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .swagger-ui .tab li.active {
+            color: var(--text-primary);
+        }
+
+        .swagger-ui .tab li button.tablinks {
+            background: transparent;
+            color: inherit;
+        }
+
+        .swagger-ui .tab li button.tablinks:hover {
+            color: var(--text-primary);
+        }
+
+        /* Model section */
+        .swagger-ui section.models {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+        }
+
+        .swagger-ui section.models h4 {
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .swagger-ui .model-box {
+            background: var(--bg-tertiary);
+        }
+
+        .swagger-ui .model {
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui .prop-type {
+            color: var(--accent);
+        }
+
+        /* Markdown content */
+        .swagger-ui .markdown p,
+        .swagger-ui .markdown li {
+            color: var(--text-secondary);
+        }
+
+        .swagger-ui .markdown code {
+            background: var(--code-bg);
+            color: var(--accent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+        }
+
+        /* Loading */
+        .swagger-ui .loading-container {
+            background: var(--bg-primary);
+        }
+
+        /* Scrollbar */
+        .swagger-ui ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .swagger-ui ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .swagger-ui ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .swagger-ui ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Arrow icons */
+        .swagger-ui .expand-operation svg,
+        .swagger-ui .opblock-summary-control svg {
+            fill: var(--text-muted);
+        }
+
+        /* Highlight for microlight */
+        .swagger-ui .microlight {
+            background: var(--code-bg) !important;
+        }
+
+        /* Copy button */
+        .swagger-ui .copy-to-clipboard {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .swagger-ui .copy-to-clipboard button {
+            background: transparent;
+        }
+
+        /* Authorization */
+        .swagger-ui .authorization__btn {
+            border-color: var(--border);
+        }
+
+        .swagger-ui .authorization__btn svg {
+            fill: var(--text-muted);
+        }
+
+        /* Links */
+        .swagger-ui a {
+            color: var(--accent);
+        }
+
+        .swagger-ui a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* Version badge */
+        .swagger-ui .info .title small.version-stamp {
+            background: var(--accent);
+            border-radius: 4px;
+            color: white;
+        }
+
+        /* JSON highlighting */
+        .swagger-ui .highlight-code > .microlight code {
+            color: var(--text-primary);
+        }
+
+        /* opblock active state */
+        .swagger-ui .opblock.opblock-get.is-open .opblock-summary {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .swagger-ui .opblock.opblock-post.is-open .opblock-summary {
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Example select */
+        .swagger-ui .examples-select {
+            border-color: var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .swagger-ui .examples-select .examples-select-element {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+    <script>
+        const spec = {
+            "openapi": "3.0.3",
+            "info": {
+                "title": "StockWin ARS API",
+                "description": "ARS 결제 시스템 연동 API",
+                "version": "1.0.0",
+                "contact": {
+                    "name": "다삼솔루션"
+                }
+            },
+            "servers": [
+                {
+                    "url": "https://www.arspg.co.kr/ars/allat/dev/db",
+                    "description": "개발 서버"
+                },
+                {
+                    "url": "https://www.arspg.co.kr/ars/allat/db",
+                    "description": "운영 서버"
+                }
+            ],
+            "paths": {
+                "/stockwin_get_arstype.asp": {
+                    "get": {
+                        "summary": "결제유형 조회",
+                        "description": "ARS 전화번호에 배정된 결제유형을 조회합니다.",
+                        "operationId": "getArsType",
+                        "parameters": [
+                            {
+                                "name": "mode",
+                                "in": "query",
+                                "required": true,
+                                "description": "인증 모드 (고정값)",
+                                "schema": {
+                                    "type": "string",
+                                    "default": "hangung2^alphago_hankyung"
+                                }
+                            },
+                            {
+                                "name": "ars_tel_no",
+                                "in": "query",
+                                "required": true,
+                                "description": "ARS 전화번호 (4자리)",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "6690"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "성공",
+                                "content": {
+                                    "text/plain": {
+                                        "schema": {
+                                            "type": "string"
+                                        },
+                                        "examples": {
+                                            "success": {
+                                                "summary": "성공 (단일 유형)",
+                                                "value": "2972|CQS|0000|결제유형획득에 성공하셨습니다."
+                                            },
+                                            "multiple": {
+                                                "summary": "성공 (복수 유형)",
+                                                "value": "2972|CQS,CIP|0000|결제유형획득에 성공하셨습니다."
+                                            },
+                                            "notfound": {
+                                                "summary": "실패 (전화번호 없음)",
+                                                "value": "9999||9002|해당 전화번호를 찾을 수 없습니다."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/stockwin_item_update.asp": {
+                    "post": {
+                        "summary": "시나리오 등록",
+                        "description": "결제 시나리오를 등록하거나 수정합니다.",
+                        "operationId": "updateItem",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/x-www-form-urlencoded": {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": ["mode", "shop_id", "ars_tel_no", "scenario_type", "arrribute_type", "amount", "cc_pord_desc"],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "description": "인증 모드 (고정값)",
+                                                "default": "hangung2^alphago_hankyung"
+                                            },
+                                            "shop_id": {
+                                                "type": "string",
+                                                "description": "PG사 결제 ID\n- arsstockwin2: 정기결제 (빌키 발급)\n- arsstockwin1: 간편결제\n- arsstockwin: 일반결제",
+                                                "enum": ["arsstockwin", "arsstockwin1", "arsstockwin2"],
+                                                "example": "arsstockwin2"
+                                            },
+                                            "ars_tel_no": {
+                                                "type": "string",
+                                                "description": "ARS 전화번호 (4자리)",
+                                                "example": "6690"
+                                            },
+                                            "scenario_type": {
+                                                "type": "string",
+                                                "description": "시나리오 유형\n- CQS: 정기결제용\n- CIP: 일반/간편결제용",
+                                                "enum": ["CQS", "CIP"],
+                                                "example": "CQS"
+                                            },
+                                            "arrribute_type": {
+                                                "type": "string",
+                                                "description": "시나리오 속성\n\n**정기결제(CQS):**\n- 1MINTHSEAL: 1개월 할인금액 후 정기결제\n- 1MONTH: 1개월 무료체험 후 정기결제\n- 1WEEK: 1주일 무료체험 후 정기결제\n- 2WEEK: 2주일 무료체험 후 정기결제\n- NOFREE: 무료체험 없는 정기결제\n- ADVRESERVD: 사전예약형 (startdtm 필수)\n\n**일반/간편결제(CIP):**\n- EDUCATION: 교육형\n- SERVICE: 일반 서비스형",
+                                                "enum": ["1MINTHSEAL", "1MONTH", "1WEEK", "2WEEK", "NOFREE", "ADVRESERVD", "EDUCATION", "SERVICE"],
+                                                "example": "1MONTH"
+                                            },
+                                            "amount": {
+                                                "type": "string",
+                                                "description": "결제/안내 금액",
+                                                "example": "99000"
+                                            },
+                                            "cc_pord_desc": {
+                                                "type": "string",
+                                                "description": "상품 정보 (상품명^상품코드)",
+                                                "example": "프리미엄종목^PROD001"
+                                            },
+                                            "startdtm": {
+                                                "type": "string",
+                                                "description": "사전예약 시작일시 (ADVRESERVD일 때 필수, YYYYMMDDHHMM 형식)",
+                                                "example": "202601200900"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "성공",
+                                "content": {
+                                    "text/plain": {
+                                        "schema": {
+                                            "type": "string"
+                                        },
+                                        "examples": {
+                                            "success": {
+                                                "summary": "등록 성공",
+                                                "value": "2972|PROD001|0000|등록이 완료되었습니다."
+                                            },
+                                            "error": {
+                                                "summary": "등록 실패",
+                                                "value": "2972||0004|유효하지 않은 scenario_type입니다."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "components": {
+                "schemas": {
+                    "ResponseFormat": {
+                        "type": "string",
+                        "description": "응답 형식: field1|field2|Error_cd|message (파이프 구분)"
+                    }
+                }
+            },
+            "tags": []
+        };
+
+        window.onload = function() {
+            SwaggerUIBundle({
+                spec: spec,
+                dom_id: '#swagger-ui',
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout",
+                defaultModelsExpandDepth: -1,
+                docExpansion: "list",
+                tryItOutEnabled: true
+            });
+        };
+    </script>
+</body>
+</html>

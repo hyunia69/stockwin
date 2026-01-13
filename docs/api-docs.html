@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockWin ARS API</title>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #171717;
+            --bg-tertiary: #222222;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6b6b6b;
+            --accent: #5e6ad2;
+            --accent-hover: #7c85e0;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --border: #2a2a2a;
+            --code-bg: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        header {
+            margin-bottom: 48px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+
+        .badge-dev {
+            background: var(--accent);
+            color: white;
+        }
+
+        .section {
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .endpoint-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .method {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .method-get {
+            background: #22c55e20;
+            color: #4ade80;
+        }
+
+        .method-post {
+            background: #3b82f620;
+            color: #60a5fa;
+        }
+
+        .endpoint-path {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        .endpoint-desc {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        .param-name {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--text-primary);
+        }
+
+        .required {
+            color: var(--error);
+            font-size: 11px;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .response-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .error-codes {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 20px;
+        }
+
+        .error-code {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--warning);
+        }
+
+        .base-url {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+        }
+
+        .base-url-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .base-url-value {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: var(--accent);
+        }
+
+        .type-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .type-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+        }
+
+        .type-card-code {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .type-card-desc {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .try-it {
+            margin-top: 20px;
+        }
+
+        .try-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .try-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .response-format {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StockWin ARS API</h1>
+            <p class="subtitle">ARS 결제 시스템 연동을 위한 API 명세</p>
+            <span class="badge badge-dev">v1.0</span>
+        </header>
+
+        <section class="section">
+            <h2>Base URL</h2>
+            <div class="base-url">
+                <div class="base-url-label">개발</div>
+                <div class="base-url-value">https://www.arspg.co.kr/ars/allat/dev/db</div>
+            </div>
+            <div class="base-url">
+                <div class="base-url-label">운영</div>
+                <div class="base-url-value">https://www.arspg.co.kr/ars/allat/db</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>인증</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">모든 요청에 <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">mode</code> 파라미터 필수</p>
+            <div class="code-block">
+                <pre>mode=hangung2^alphago_hankyung</pre>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>결제유형 코드</h2>
+            <div class="type-codes">
+                <div class="type-card">
+                    <div class="type-card-code">CQS</div>
+                    <div class="type-card-desc">정기결제용 (자동 CID 인식)</div>
+                </div>
+                <div class="type-card">
+                    <div class="type-card-code">CIP</div>
+                    <div class="type-card-desc">일반/간편결제용</div>
+                </div>
+                <div class="type-card">
+                    <div class="type-card-code">NDY</div>
+                    <div class="type-card-desc">결제유형 미지정</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Endpoints</h2>
+
+            <!-- GET 결제유형 조회 -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <span class="endpoint-path">/stockwin_get_arstype.asp</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">ARS 전화번호에 배정된 결제유형을 조회합니다.</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">mode</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>인증 모드 (고정값)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">ars_tel_no</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>ARS 전화번호 (4자리)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="response-label">Response Format</div>
+                    <div class="code-block">
+                        <pre>ars_tel_no|type_cd_list|Error_cd|message</pre>
+                    </div>
+
+                    <div class="response-label">Example Response</div>
+                    <div class="code-block">
+                        <pre>2972|CQS|0000|결제유형획득에 성공하셨습니다.</pre>
+                    </div>
+
+                    <div class="try-it">
+                        <button class="try-btn" onclick="testGetArsType()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Try it
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POST 시나리오 등록 -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method method-post">POST</span>
+                    <span class="endpoint-path">/stockwin_item_update.asp</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">결제 시나리오를 등록하거나 수정합니다.</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">mode</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>인증 모드 (고정값)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">shop_id</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>arsstockwin | arsstockwin1 | arsstockwin2</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">ars_tel_no</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>ARS 전화번호 (4자리)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">scenario_type</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>CQS | CIP</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">arrribute_type</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>1MONTH | 1WEEK | 2WEEK | NOFREE | ADVRESERVD | SERVICE | EDUCATION</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">amount</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>결제/안내 금액</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">cc_pord_desc</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>상품명^상품코드</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">startdtm</span></td>
+                                <td>string</td>
+                                <td>조건부</td>
+                                <td>ADVRESERVD일 때 필수 (YYYYMMDDHHMM)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="response-label">shop_id 유형</div>
+                    <div class="type-codes" style="margin-top: 8px;">
+                        <div class="type-card">
+                            <div class="type-card-code">arsstockwin2</div>
+                            <div class="type-card-desc">정기결제 (빌키 발급)</div>
+                        </div>
+                        <div class="type-card">
+                            <div class="type-card-code">arsstockwin1</div>
+                            <div class="type-card-desc">간편결제</div>
+                        </div>
+                        <div class="type-card">
+                            <div class="type-card-code">arsstockwin</div>
+                            <div class="type-card-desc">일반결제</div>
+                        </div>
+                    </div>
+
+                    <div class="response-label" style="margin-top: 20px;">Response Format</div>
+                    <div class="code-block">
+                        <pre>ars_tel_no|Item_cd|Error_cd|message</pre>
+                    </div>
+
+                    <div class="response-label">Example Response</div>
+                    <div class="code-block">
+                        <pre>2972|PROD001|0000|등록이 완료되었습니다.</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>에러 코드</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">0000</span></td>
+                        <td>성공</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0001</span></td>
+                        <td>mode 값 오류</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0002</span></td>
+                        <td>ars_tel_no 또는 shop_id 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0003</span></td>
+                        <td>ars_tel_no 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0004</span></td>
+                        <td>scenario_type 오류</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0005</span></td>
+                        <td>arrribute_type 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0006</span></td>
+                        <td>amount 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0007</span></td>
+                        <td>cc_pord_desc 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0008</span></td>
+                        <td>startdtm 누락 (ADVRESERVD)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">9001</span></td>
+                        <td>데이터베이스 오류</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">9002</span></td>
+                        <td>전화번호 미등록</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            <p>StockWin ARS API v1.0 &middot; 다삼솔루션</p>
+        </footer>
+    </div>
+
+    <script>
+        function testGetArsType() {
+            const telNo = prompt('ARS 전화번호를 입력하세요 (4자리):', '6690');
+            if (telNo) {
+                const url = `https://www.arspg.co.kr/ars/allat/dev/db/stockwin_get_arstype.asp?mode=hangung2%5Ealphago_hankyung&ars_tel_no=${telNo}`;
+                window.open(url, '_blank');
+            }
+        }
+    </script>
+</body>
+</html>

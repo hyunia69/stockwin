@@ -1,0 +1,381 @@
+{
+	"info": {
+		"_postman_id": "dasam-stockwin-ars-api",
+		"name": "다삼 StockWin ARS API",
+		"description": "StockWin 서비스용 ARS 결제 API\n\n- 결제유형 조회\n- 시나리오 등록/수정\n\n## 환경 설정\n- **DEV** (기본): baseUrl = `https://www.arspg.co.kr/ars/allat/dev/db`\n- **PROD**: baseUrl = `https://www.arspg.co.kr/ars/allat/db`\n\nCollection Variables에서 baseUrl 값을 변경하여 환경 전환",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://www.arspg.co.kr/ars/allat/dev/db",
+			"description": "DEV: https://www.arspg.co.kr/ars/allat/dev/db | PROD: https://www.arspg.co.kr/ars/allat/db",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "결제유형 조회",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/stockwin_get_arstype.asp?mode=hangung2^alphago_hankyung&ars_tel_no=6690",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"stockwin_get_arstype.asp"
+					],
+					"query": [
+						{
+							"key": "mode",
+							"value": "hangung2^alphago_hankyung",
+							"description": "인증 모드 (고정값: hangung2^alphago_hankyung)"
+						},
+						{
+							"key": "ars_tel_no",
+							"value": "6690",
+							"description": "ARS 전화번호 (4자리)"
+						}
+					]
+				},
+				"description": "ARS 전화번호에 배정된 결제유형을 조회합니다.\n\n### 결제유형 코드\n- `CQS`: 정기결제용\n- `CIP`: 일반/간편결제용\n- `NDY`: 결제유형 미지정\n\n### 응답 형식\n```\nars_tel_no|type_cd_list|Error_cd|message\n```"
+			},
+			"response": [
+				{
+					"name": "성공 (단일 유형)",
+					"originalRequest": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_get_arstype.asp?mode={{mode}}&ars_tel_no=2972"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "2972|CQS|0000|결제유형획득에 성공하셨습니다."
+				},
+				{
+					"name": "성공 (복수 유형)",
+					"originalRequest": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_get_arstype.asp?mode={{mode}}&ars_tel_no=2972"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "2972|CQS,CIP|0000|결제유형획득에 성공하셨습니다."
+				},
+				{
+					"name": "실패 (전화번호 없음)",
+					"originalRequest": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_get_arstype.asp?mode={{mode}}&ars_tel_no=9999"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "9999||9002|해당 전화번호를 찾을 수 없습니다."
+				}
+			]
+		},
+		{
+			"name": "시나리오 등록 (정기결제)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded; charset=UTF-8"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "mode",
+							"value": "hangung2^alphago_hankyung",
+							"description": "인증 모드 (고정값)",
+							"type": "text"
+						},
+						{
+							"key": "shop_id",
+							"value": "arsstockwin2",
+							"description": "PG사 결제 ID (arsstockwin/arsstockwin1/arsstockwin2)",
+							"type": "text"
+						},
+						{
+							"key": "ars_tel_no",
+							"value": "6690",
+							"description": "ARS 전화번호 (4자리)",
+							"type": "text"
+						},
+						{
+							"key": "scenario_type",
+							"value": "CQS",
+							"description": "시나리오 유형 (CQS: 정기결제, CIP: 일반/간편)",
+							"type": "text"
+						},
+						{
+							"key": "arrribute_type",
+							"value": "1MONTH",
+							"description": "시나리오 속성 (1MONTH/1WEEK/2WEEK/NOFREE/ADVRESERVD 등)",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "99000",
+							"description": "결제/안내 금액",
+							"type": "text"
+						},
+						{
+							"key": "cc_pord_desc",
+							"value": "프리미엄종목^PROD001",
+							"description": "상품 정보 (상품명^상품코드)",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/stockwin_item_update.asp",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"stockwin_item_update.asp"
+					]
+				},
+				"description": "정기결제 시나리오를 등록합니다.\n\n### shop_id 유형\n- `arsstockwin2`: 정기결제 (빌키 발급)\n- `arsstockwin1`: 간편결제\n- `arsstockwin`: 일반결제\n\n### 정기결제 속성 (arrribute_type)\n- `1MINTHSEAL`: 1개월 할인금액 후 정기결제\n- `1MONTH`: 1개월 무료체험 후 정기결제\n- `1WEEK`: 1주일 무료체험 후 정기결제\n- `2WEEK`: 2주일 무료체험 후 정기결제\n- `NOFREE`: 무료체험 없는 정기결제\n- `ADVRESERVD`: 사전예약형 (startdtm 필수)\n\n### 응답 형식\n```\nars_tel_no|Item_cd|Error_cd|message\n```"
+			},
+			"response": [
+				{
+					"name": "성공",
+					"originalRequest": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_item_update.asp"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "2972|PROD001|0000|등록이 완료되었습니다."
+				}
+			]
+		},
+		{
+			"name": "시나리오 등록 (일반/간편결제)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded; charset=UTF-8"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "mode",
+							"value": "hangung2^alphago_hankyung",
+							"description": "인증 모드 (고정값)",
+							"type": "text"
+						},
+						{
+							"key": "shop_id",
+							"value": "arsstockwin",
+							"description": "PG사 결제 ID (arsstockwin: 일반결제)",
+							"type": "text"
+						},
+						{
+							"key": "ars_tel_no",
+							"value": "6690",
+							"description": "ARS 전화번호 (4자리)",
+							"type": "text"
+						},
+						{
+							"key": "scenario_type",
+							"value": "CIP",
+							"description": "시나리오 유형 (CIP: 일반/간편)",
+							"type": "text"
+						},
+						{
+							"key": "arrribute_type",
+							"value": "SERVICE",
+							"description": "시나리오 속성 (EDUCATION/SERVICE)",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "50000",
+							"description": "결제/안내 금액",
+							"type": "text"
+						},
+						{
+							"key": "cc_pord_desc",
+							"value": "교육상품^EDU001",
+							"description": "상품 정보 (상품명^상품코드)",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/stockwin_item_update.asp",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"stockwin_item_update.asp"
+					]
+				},
+				"description": "일반/간편결제 시나리오를 등록합니다.\n\n### 일반/간편결제 속성 (arrribute_type)\n- `EDUCATION`: 교육형 시나리오\n- `SERVICE`: 일반 서비스형\n\n### 응답 형식\n```\nars_tel_no|Item_cd|Error_cd|message\n```"
+			},
+			"response": [
+				{
+					"name": "성공",
+					"originalRequest": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_item_update.asp"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "2972|EDU001|0000|등록이 완료되었습니다."
+				}
+			]
+		},
+		{
+			"name": "시나리오 등록 (사전예약형)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded; charset=UTF-8"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "mode",
+							"value": "hangung2^alphago_hankyung",
+							"description": "인증 모드 (고정값)",
+							"type": "text"
+						},
+						{
+							"key": "shop_id",
+							"value": "arsstockwin2",
+							"description": "PG사 결제 ID",
+							"type": "text"
+						},
+						{
+							"key": "ars_tel_no",
+							"value": "6690",
+							"description": "ARS 전화번호 (4자리)",
+							"type": "text"
+						},
+						{
+							"key": "scenario_type",
+							"value": "CQS",
+							"description": "시나리오 유형",
+							"type": "text"
+						},
+						{
+							"key": "arrribute_type",
+							"value": "ADVRESERVD",
+							"description": "사전예약형 속성 (startdtm 필수)",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "150000",
+							"description": "결제/안내 금액",
+							"type": "text"
+						},
+						{
+							"key": "cc_pord_desc",
+							"value": "VIP종목^VIP001",
+							"description": "상품 정보 (상품명^상품코드)",
+							"type": "text"
+						},
+						{
+							"key": "startdtm",
+							"value": "202601200900",
+							"description": "사전예약 시작일시 (YYYYMMDDHHMM)",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/stockwin_item_update.asp",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"stockwin_item_update.asp"
+					]
+				},
+				"description": "사전예약형 시나리오를 등록합니다.\n\n### 주의사항\n- `arrribute_type`이 `ADVRESERVD`일 때 `startdtm` 필수\n- `startdtm` 형식: YYYYMMDDHHMM (예: 202601200900)\n- 금일 이후 일자만 유효\n\n### 응답 형식\n```\nars_tel_no|Item_cd|Error_cd|message\n```"
+			},
+			"response": [
+				{
+					"name": "성공",
+					"originalRequest": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/stockwin_item_update.asp"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"body": "2972|VIP001|0000|등록이 완료되었습니다."
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// 응답 파싱 테스트",
+					"pm.test(\"Status code is 200\", function () {",
+					"    pm.response.to.have.status(200);",
+					"});",
+					"",
+					"pm.test(\"Response has pipe-delimited format\", function () {",
+					"    var responseText = pm.response.text();",
+					"    var parts = responseText.split('|');",
+					"    pm.expect(parts.length).to.be.at.least(4);",
+					"});",
+					"",
+					"pm.test(\"Check error code\", function () {",
+					"    var responseText = pm.response.text();",
+					"    var parts = responseText.split('|');",
+					"    var errorCode = parts[2];",
+					"    ",
+					"    if (errorCode === '0000') {",
+					"        console.log('Success: ' + parts[3]);",
+					"    } else {",
+					"        console.log('Error [' + errorCode + ']: ' + parts[3]);",
+					"    }",
+					"});"
+				]
+			}
+		}
+	]
+}
