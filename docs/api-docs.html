@@ -6,6 +6,7 @@
     <title>StockWin ARS API</title>
     <style>
         :root {
+            --nav-height: 48px;
             --bg-primary: #0d0d0d;
             --bg-secondary: #171717;
             --bg-tertiary: #222222;
@@ -290,9 +291,66 @@
             font-size: 12px;
             margin-top: 12px;
         }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-right: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .container {
+            padding-top: calc(var(--nav-height) + 40px);
+        }
     </style>
 </head>
 <body>
+    <nav class="nav">
+        <span class="nav-brand">StockWin ARS</span>
+        <div class="nav-links">
+            <a href="api-docs.html" class="nav-link active">Documentation</a>
+            <a href="swagger-ui.html" class="nav-link">Swagger UI</a>
+        </div>
+    </nav>
     <div class="container">
         <header>
             <h1>StockWin ARS API</h1>
