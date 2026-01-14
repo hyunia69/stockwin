@@ -18,7 +18,10 @@
       "Bash(pip install:*)",
       "Bash(ls:*)",
       "Bash(dir D:dasamstockwincodestockwinBillkeytmpclaude-*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "Bash(pip show:*)"
     ]
   }
 }

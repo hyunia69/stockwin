@@ -1,8 +1,8 @@
-# 다솜 StockWin ARS 결제 API 명세서
+# 다삼 StockWin ARS 결제 API 명세서
 
-**문서번호**: DASAM_STOCKWIN_ARS_API_v1.0
-**버전**: 1.0
-**최종수정일**: 2026-01-13
+**문서번호**: DASAM_STOCKWIN_ARS_API_v1.1
+**버전**: 1.1
+**최종수정일**: 2026-01-14
 **작성자**: 다삼솔루션
 
 ---
@@ -11,7 +11,7 @@
 
 ### 1.1 목적
 
-본 문서는 StockWin 서비스에서 다삼솔루션 ARS 결제 시스템과 연동하기 위한 API 명세입니다. 결제 유형 조회 및 시나리오 등록 기능을 제공합니다.
+본 문서는 StockWin 서비스에서 다삼솔루션 ARS 결제 시스템과 연동하기 위한 API 명세입니다. 결제 유형 조회, 시나리오 등록, 주문 결제정보 전달 기능을 제공합니다.
 
 ### 1.2 통신 규약
 
@@ -20,7 +20,7 @@
 | 프로토콜 | HTTP 1.1 |
 | 방식 | RESTful API |
 | 인코딩 | UTF-8 |
-| 응답 형식 | Plain Text (구분자: `\|`) |
+| 응답 형식 | Plain Text (구분자: `\|`) 또는 JSON |
 
 ### 1.3 서비스 흐름
 
@@ -28,15 +28,21 @@
 [StockWin 상품관리]
         │
         ▼ (1) 결제 유형 조회 (GET)
-[다솜 ARS 시스템]
+[다삼 ARS 시스템]
         │
         ▼ (2) 결제유형 반환 (CQS/CIP/NDY)
 [StockWin 상품관리]
         │
         ▼ (3) 시나리오 등록 요청 (POST)
-[다솜 ARS 시스템]
+[다삼 ARS 시스템]
         │
         ▼ (4) 등록 결과 반환
+[StockWin 상품관리]
+        │
+        ▼ (5) 주문 결제정보 전달 (POST)
+[다삼솔루션 결제 서버]
+        │
+        ▼ (6) 처리 결과 반환
 [StockWin 상품관리]
 ```
 
@@ -46,10 +52,10 @@
 
 ### 2.1 서버 정보
 
-| 환경 | 기본 URL |
-|------|----------|
-| 개발 | `https://www.arspg.co.kr/ars/allat/dev/db/` |
-| 운영 | `https://www.arspg.co.kr/ars/allat/db/` |
+| 환경 | 기본 URL | 용도 |
+|------|----------|------|
+| 개발 | `https://www.arspg.co.kr/ars/allat/dev/db/` | ARS 시나리오 관리 / 주문 결제정보 전달 |
+| 운영 | `https://www.arspg.co.kr/ars/allat/db/` | ARS 시나리오 관리 / 주문 결제정보 전달 |
 
 ### 2.2 API 목록
 
@@ -57,6 +63,7 @@
 |-----|--------|----------|------|
 | 결제유형 조회 | GET | `/stockwin_get_arstype.asp` | ARS 전화번호별 결제유형 조회 |
 | 시나리오 등록 | POST | `/stockwin_item_update.asp` | 결제 시나리오 등록/수정 |
+| 주문 결제정보 전달 | POST | `/stockwin_order_request.asp` | 다삼솔루션으로 결제정보 전달 |
 
 ---
 
@@ -240,9 +247,83 @@ ars_tel_no|Item_cd|Error_cd|message
 
 ---
 
-## 5. 에러 코드
+## 5. 주문 결제정보 전달 API
 
-### 5.1 공통 에러 코드
+### 5.1 기본 정보
+
+| 항목 | 값 |
+|------|-----|
+| **Endpoint** | `/stockwin_order_request.asp` |
+| **Method** | `POST` |
+| **Content-Type** | `application/json` |
+| **Request Encoding** | UTF-8 |
+
+### 5.2 요청 파라미터
+
+| No | Parameter | Type | 필수 | 설명 | 예시 |
+|----|-----------|------|:----:|------|------|
+| 1 | `mode` | String | O | 인증모드 (고정값) | `hangung^alphago_hankyung` |
+| 2 | `shop_id` | String | O | 상점 ID (고정값) | `arsstockwin` |
+| 3 | `amount` | String | O | 결제금액 | `100000` |
+| 4 | `phone_no` | String | O | 핸드폰번호 | `010****1111` |
+| 5 | `verify_num` | String | O | 인증번호 (고정값) | `123456` |
+| 6 | `request_type` | String | O | 요청타입 (고정값) | `CIA` |
+| 7 | `alert_show` | String | O | 알림 표시 여부 (고정값) | `N` |
+| 8 | `order_no` | String | O | 주문번호 | `202601134267168` |
+| 9 | `cc_name` | String | O | 필명 (주문자명) | `Sy` |
+| 10 | `cc_pord_desc` | String | O | 상품명^패키지번호 | `감은숙 머니차트 풀패키지 1개월 19만원^102958` |
+
+### 5.3 파라미터 상세 설명
+
+#### 고정값 파라미터
+- **mode**: 인증모드 식별자. 항상 `hangung^alphago_hankyung` 사용
+- **shop_id**: 상점 식별자. 항상 `arsstockwin` 사용
+- **verify_num**: 인증번호. 항상 `123456` 사용
+- **request_type**: 요청 타입. 항상 `CIA` 사용
+- **alert_show**: 알림 표시 여부. 항상 `N` 사용
+
+#### 가변 파라미터
+- **amount**: 결제 금액 (원 단위, 숫자 문자열)
+- **phone_no**: 고객 핸드폰 번호 (마스킹 처리 가능: `010****1111`)
+- **order_no**: 주문번호 (시스템에서 생성된 고유 번호)
+- **cc_name**: 주문자 필명/이름
+- **cc_pord_desc**: 상품 설명과 패키지 번호를 `^`로 구분하여 결합
+  - 형식: `{상품명}^{패키지번호}`
+  - 예: `감은숙 머니차트 풀패키지 1개월 19만원^102958`
+
+### 5.4 요청 예시
+
+```http
+POST /ars/allat/db/stockwin_order_request.asp HTTP/1.1
+Host: www.arspg.co.kr
+Content-Type: application/json; charset=UTF-8
+
+{
+  "mode": "hangung^alphago_hankyung",
+  "shop_id": "arsstockwin",
+  "amount": "190000",
+  "phone_no": "010****4925",
+  "verify_num": "123456",
+  "request_type": "CIA",
+  "alert_show": "N",
+  "order_no": "202601134267168",
+  "cc_name": "sy",
+  "cc_pord_desc": "감은숙 머니차트 풀패키지 1개월 19만원^102958"
+}
+```
+
+### 5.5 비고
+
+- 모든 파라미터는 문자열(String) 타입으로 전달
+- 필수(O) 파라미터는 반드시 포함되어야 함
+- 고정값 파라미터는 명시된 값을 그대로 사용할 것
+- 핸드폰 번호는 개인정보 보호를 위해 마스킹 처리 가능
+
+---
+
+## 6. 에러 코드
+
+### 6.1 공통 에러 코드
 
 | 코드 | 설명 |
 |------|------|
@@ -250,14 +331,14 @@ ars_tel_no|Item_cd|Error_cd|message
 | `0001` | mode 값 오류 |
 | `9001` | 데이터베이스 오류 |
 
-### 5.2 결제유형 조회 에러 코드
+### 6.2 결제유형 조회 에러 코드
 
 | 코드 | 설명 |
 |------|------|
 | `0002` | ars_tel_no 누락 |
 | `9002` | 전화번호 미등록 |
 
-### 5.3 시나리오 등록 에러 코드
+### 6.3 시나리오 등록 에러 코드
 
 | 코드 | 설명 |
 |------|------|
@@ -271,9 +352,9 @@ ars_tel_no|Item_cd|Error_cd|message
 
 ---
 
-## 6. 연동 가이드
+## 7. 연동 가이드
 
-### 6.1 연동 순서
+### 7.1 연동 순서
 
 ```
 1. 결제유형 조회 API 호출
@@ -289,9 +370,12 @@ ars_tel_no|Item_cd|Error_cd|message
 4. 응답 결과 처리
    ├─ 0000 → 등록 성공
    └─ 그 외 → 에러 메시지 확인
+
+5. 주문 결제정보 전달 API 호출 (필요 시)
+   └─ 다삼솔루션 결제 서버로 주문 정보 전송
 ```
 
-### 6.2 권장 처리 로직
+### 7.2 권장 처리 로직
 
 ```javascript
 // 결제유형 조회 결과 처리
@@ -317,7 +401,7 @@ function handleArsType(response) {
 }
 ```
 
-### 6.3 주의사항
+### 7.3 주의사항
 
 1. **인코딩**: 모든 요청/응답은 UTF-8 인코딩 사용
 2. **URL 인코딩**: POST 데이터의 한글은 반드시 URL 인코딩 필요
@@ -326,30 +410,31 @@ function handleArsType(response) {
 
 ---
 
-## 7. 보안 고려사항
+## 8. 보안 고려사항
 
-### 7.1 인증
+### 8.1 인증
 
 - `mode` 파라미터를 통한 기본 인증
 - 추후 API Key 방식 도입 검토 권장
 
-### 7.2 전송 보안
+### 8.2 전송 보안
 
 - HTTPS 사용 권장
 - 민감 정보 로깅 금지
 
-### 7.3 입력 검증
+### 8.3 입력 검증
 
 - SQL Injection 방지 (작은따옴표 이스케이프 처리)
 - 파라미터 화이트리스트 검증
 
 ---
 
-## 8. 변경 이력
+## 9. 변경 이력
 
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0 | 2026-01-13 | 최초 작성 (GET/POST API 통합) | 다삼솔루션 |
+| 1.1 | 2026-01-14 | 주문 결제정보 전달 API 추가 | 다삼솔루션 |
 
 ---
 
@@ -380,4 +465,22 @@ curl -X POST "https://www.arspg.co.kr/ars/allat/db/stockwin_item_update.asp" \
   -d "arrribute_type=1MONTH" \
   -d "amount=99000" \
   -d "cc_pord_desc=%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%5EPROD001"
+```
+
+**cURL - 주문 결제정보 전달**
+```bash
+curl -X POST "https://www.arspg.co.kr/ars/allat/db/stockwin_order_request.asp" \
+  -H "Content-Type: application/json; charset=UTF-8" \
+  -d '{
+    "mode": "hangung^alphago_hankyung",
+    "shop_id": "arsstockwin",
+    "amount": "190000",
+    "phone_no": "01012344925",
+    "verify_num": "123456",
+    "request_type": "CIA",
+    "alert_show": "N",
+    "order_no": "202601134267168",
+    "cc_name": "sy",
+    "cc_pord_desc": "감은숙 머니차트 풀패키지 1개월 19만원^102958"
+  }'
 ```
