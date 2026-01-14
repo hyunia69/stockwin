@@ -696,6 +696,157 @@
                             }
                         }
                     }
+                },
+                "/stockwin_order_request.asp": {
+                    "post": {
+                        "summary": "주문 결제정보 전달",
+                        "description": "StockWin에서 다삼솔루션으로 주문 결제정보를 전달합니다. 신규 주문은 INSERT, 기존 주문(동일 order_no)은 UPDATE 처리됩니다.",
+                        "operationId": "createOrderRequest",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": ["mode", "shop_id", "amount", "phone_no", "verify_num", "request_type", "order_no", "cc_name", "cc_pord_desc"],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "description": "인증 모드 (고정값)",
+                                                "default": "hangung^alphago_hankyung"
+                                            },
+                                            "shop_id": {
+                                                "type": "string",
+                                                "description": "상점 ID\n- arsstockwin: 일반결제\n- arsstockwin1: 간편결제\n- arsstockwin2: 정기결제",
+                                                "enum": ["arsstockwin", "arsstockwin1", "arsstockwin2"],
+                                                "example": "arsstockwin"
+                                            },
+                                            "amount": {
+                                                "type": "string",
+                                                "description": "결제 금액 (원 단위)",
+                                                "example": "190000"
+                                            },
+                                            "phone_no": {
+                                                "type": "string",
+                                                "description": "핸드폰 번호",
+                                                "example": "01012344925"
+                                            },
+                                            "verify_num": {
+                                                "type": "string",
+                                                "description": "인증번호",
+                                                "example": "123456"
+                                            },
+                                            "request_type": {
+                                                "type": "string",
+                                                "description": "요청 타입",
+                                                "example": "CIA"
+                                            },
+                                            "alert_show": {
+                                                "type": "string",
+                                                "description": "알림 표시 여부",
+                                                "example": "N"
+                                            },
+                                            "order_no": {
+                                                "type": "string",
+                                                "description": "주문번호 (고유값)",
+                                                "example": "202601134267168"
+                                            },
+                                            "cc_name": {
+                                                "type": "string",
+                                                "description": "주문자명 (필명)",
+                                                "example": "홍길동"
+                                            },
+                                            "cc_pord_desc": {
+                                                "type": "string",
+                                                "description": "상품명^패키지번호",
+                                                "example": "프리미엄 종목 1개월^102958"
+                                            }
+                                        }
+                                    },
+                                    "example": {
+                                        "mode": "hangung^alphago_hankyung",
+                                        "shop_id": "arsstockwin",
+                                        "amount": "190000",
+                                        "phone_no": "01012344925",
+                                        "verify_num": "123456",
+                                        "request_type": "CIA",
+                                        "alert_show": "N",
+                                        "order_no": "202601134267168",
+                                        "cc_name": "홍길동",
+                                        "cc_pord_desc": "프리미엄 종목 1개월^102958"
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "성공",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "error_cd": {
+                                                    "type": "string",
+                                                    "description": "결과 코드"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "description": "결과 메시지"
+                                                },
+                                                "order_no": {
+                                                    "type": "string",
+                                                    "description": "주문번호"
+                                                }
+                                            }
+                                        },
+                                        "examples": {
+                                            "insert_success": {
+                                                "summary": "신규 등록 성공",
+                                                "value": {
+                                                    "error_cd": "0000",
+                                                    "message": "주문정보가 등록되었습니다.",
+                                                    "order_no": "202601134267168"
+                                                }
+                                            },
+                                            "duplicate_error": {
+                                                "summary": "중복 주문번호 오류",
+                                                "value": {
+                                                    "error_cd": "0010",
+                                                    "message": "이미 등록된 주문번호입니다.",
+                                                    "order_no": "202601134267168"
+                                                }
+                                            },
+                                            "mode_error": {
+                                                "summary": "mode 오류",
+                                                "value": {
+                                                    "error_cd": "0001",
+                                                    "message": "mode 값이 올바르지 않습니다.",
+                                                    "order_no": ""
+                                                }
+                                            },
+                                            "shop_id_error": {
+                                                "summary": "shop_id 오류",
+                                                "value": {
+                                                    "error_cd": "0002",
+                                                    "message": "유효하지 않은 shop_id입니다.",
+                                                    "order_no": ""
+                                                }
+                                            },
+                                            "db_error": {
+                                                "summary": "DB 오류",
+                                                "value": {
+                                                    "error_cd": "9001",
+                                                    "message": "데이터베이스 연결 실패",
+                                                    "order_no": ""
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             "components": {

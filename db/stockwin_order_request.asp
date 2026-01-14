@@ -286,79 +286,51 @@ rs.Close
 Set rs = Nothing
 
 If orderCount > 0 Then
-    ' 이미 존재하는 주문번호 - UPDATE
-    qry = "UPDATE ALLAT_SHOP_ORDER SET " & _
-          "MX_NAME = N'" & Replace(cc_name, "'", "''") & "', " & _
-          "MX_ID = '" & Replace(phone_no, "'", "''") & "', " & _
-          "MX_OPT = '" & Replace(request_type, "'", "''") & "', " & _
-          "ADMIN_ID = '" & Replace(shop_id, "'", "''") & "', " & _
-          "CC_NAME = N'" & Replace(cc_name, "'", "''") & "', " & _
-          "CC_PORD_DESC = N'" & Replace(cc_pord_desc, "'", "''") & "', " & _
-          "AMOUNT = " & CLng(amount) & ", " & _
-          "PHONE_NO = '" & Replace(phone_no, "'", "''") & "', " & _
-          "AUTH_NO = '" & Replace(verify_num, "'", "''") & "', " & _
-          "REQUEST_TYPE = '" & Replace(request_type, "'", "''") & "', " & _
-          "ITEM_CODE = N'" & Replace(item_code, "'", "''") & "', " & _
-          "REPLY_CODE = '0000', " & _
-          "REPLY_MESSAGE = N'주문정보 수정 완료' " & _
-          "WHERE MX_ISSUE_NO LIKE '" & Replace(order_no, "'", "''") & "%'"
-
-    dbCon.Execute qry
-
-    If Err.Number <> 0 Then
-        dbCon.Close
-        Set dbCon = Nothing
-        WriteUTF8Response MakeJsonResponse("9001", "데이터 수정 실패: " & Err.Description, order_no)
-        Response.End
-    End If
-
+    ' 이미 존재하는 주문번호 - 중복 오류 반환
     dbCon.Close
     Set dbCon = Nothing
-
-    On Error GoTo 0
-
-    ' 성공 응답 (수정)
-    WriteUTF8Response MakeJsonResponse("0000", "주문정보가 수정되었습니다.", order_no)
-Else
-    ' 신규 등록 - INSERT
-    qry = "INSERT INTO ALLAT_SHOP_ORDER (" & _
-          "MX_ISSUE_NO, MX_NAME, MX_ID, MX_OPT, ADMIN_ID, " & _
-          "CC_NAME, CC_PORD_DESC, AMOUNT, PHONE_NO, AUTH_NO, " & _
-          "REQUEST_TYPE, REPLY_CODE, REPLY_MESSAGE, REG_DATE, AUTO_INPUT, ITEM_CODE" & _
-          ") VALUES (" & _
-          "'" & Replace(mx_issue_no, "'", "''") & "', " & _
-          "N'" & Replace(cc_name, "'", "''") & "', " & _
-          "'" & Replace(phone_no, "'", "''") & "', " & _
-          "'" & Replace(request_type, "'", "''") & "', " & _
-          "'" & Replace(shop_id, "'", "''") & "', " & _
-          "N'" & Replace(cc_name, "'", "''") & "', " & _
-          "N'" & Replace(cc_pord_desc, "'", "''") & "', " & _
-          CLng(amount) & ", " & _
-          "'" & Replace(phone_no, "'", "''") & "', " & _
-          "'" & Replace(verify_num, "'", "''") & "', " & _
-          "'" & Replace(request_type, "'", "''") & "', " & _
-          "'0000', " & _
-          "N'주문정보 등록 완료', " & _
-          "GETDATE(), " & _
-          "'N', " & _
-          "N'" & Replace(item_code, "'", "''") & "'" & _
-          ")"
-
-    dbCon.Execute qry
-
-    If Err.Number <> 0 Then
-        dbCon.Close
-        Set dbCon = Nothing
-        WriteUTF8Response MakeJsonResponse("9001", "데이터 등록 실패: " & Err.Description, order_no)
-        Response.End
-    End If
-
-    dbCon.Close
-    Set dbCon = Nothing
-
-    On Error GoTo 0
-
-    ' 성공 응답 (등록)
-    WriteUTF8Response MakeJsonResponse("0000", "주문정보가 등록되었습니다.", order_no)
+    WriteUTF8Response MakeJsonResponse("0010", "이미 등록된 주문번호입니다.", order_no)
+    Response.End
 End If
+
+' 신규 등록 - INSERT
+qry = "INSERT INTO ALLAT_SHOP_ORDER (" & _
+      "MX_ISSUE_NO, MX_NAME, MX_ID, MX_OPT, ADMIN_ID, " & _
+      "CC_NAME, CC_PORD_DESC, AMOUNT, PHONE_NO, AUTH_NO, " & _
+      "REQUEST_TYPE, REPLY_CODE, REPLY_MESSAGE, REG_DATE, AUTO_INPUT, ITEM_CODE" & _
+      ") VALUES (" & _
+      "'" & Replace(mx_issue_no, "'", "''") & "', " & _
+      "N'" & Replace(cc_name, "'", "''") & "', " & _
+      "'" & Replace(phone_no, "'", "''") & "', " & _
+      "'" & Replace(request_type, "'", "''") & "', " & _
+      "'" & Replace(shop_id, "'", "''") & "', " & _
+      "N'" & Replace(cc_name, "'", "''") & "', " & _
+      "N'" & Replace(cc_pord_desc, "'", "''") & "', " & _
+      CLng(amount) & ", " & _
+      "'" & Replace(phone_no, "'", "''") & "', " & _
+      "'" & Replace(verify_num, "'", "''") & "', " & _
+      "'" & Replace(request_type, "'", "''") & "', " & _
+      "'0000', " & _
+      "N'주문정보 등록 완료', " & _
+      "GETDATE(), " & _
+      "'N', " & _
+      "N'" & Replace(item_code, "'", "''") & "'" & _
+      ")"
+
+dbCon.Execute qry
+
+If Err.Number <> 0 Then
+    dbCon.Close
+    Set dbCon = Nothing
+    WriteUTF8Response MakeJsonResponse("9001", "데이터 등록 실패: " & Err.Description, order_no)
+    Response.End
+End If
+
+dbCon.Close
+Set dbCon = Nothing
+
+On Error GoTo 0
+
+' 성공 응답 (등록)
+WriteUTF8Response MakeJsonResponse("0000", "주문정보가 등록되었습니다.", order_no)
 %>

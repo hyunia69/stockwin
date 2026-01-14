@@ -372,6 +372,7 @@
 
         <section class="section">
             <h2>통신 규격</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">공통 규격</p>
             <table>
                 <tbody>
                     <tr>
@@ -379,20 +380,40 @@
                         <td>HTTPS</td>
                     </tr>
                     <tr>
-                        <td><span class="param-name">요청 인코딩</span></td>
+                        <td><span class="param-name">요청/응답 인코딩</span></td>
                         <td>UTF-8</td>
                     </tr>
+                </tbody>
+            </table>
+
+            <p style="color: var(--text-secondary); margin-top: 24px; margin-bottom: 16px;">API별 통신 규격</p>
+            <table>
+                <thead>
                     <tr>
-                        <td><span class="param-name">응답 인코딩</span></td>
-                        <td>UTF-8</td>
+                        <th>API</th>
+                        <th>Method</th>
+                        <th>Content-Type</th>
+                        <th>응답 형식</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">결제유형 조회</span></td>
+                        <td>GET</td>
+                        <td>Query String</td>
+                        <td>Plain Text (<code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">|</code> 구분)</td>
                     </tr>
                     <tr>
-                        <td><span class="param-name">응답 형식</span></td>
-                        <td>Plain Text (파이프 <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">|</code> 구분)</td>
+                        <td><span class="param-name">시나리오 등록</span></td>
+                        <td>POST</td>
+                        <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">application/x-www-form-urlencoded</code></td>
+                        <td>Plain Text (<code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">|</code> 구분)</td>
                     </tr>
                     <tr>
-                        <td><span class="param-name">Content-Type (POST)</span></td>
-                        <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">application/x-www-form-urlencoded; charset=UTF-8</code></td>
+                        <td><span class="param-name">주문 결제정보 전달</span></td>
+                        <td>POST</td>
+                        <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">application/json</code></td>
+                        <td>JSON</td>
                     </tr>
                 </tbody>
             </table>
@@ -400,10 +421,25 @@
 
         <section class="section">
             <h2>인증</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 12px;">모든 요청에 <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">mode</code> 파라미터 필수</p>
-            <div class="code-block">
-                <pre>mode=hangung2^alphago_hankyung</pre>
-            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">모든 요청에 <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">mode</code> 파라미터 필수 (API별 값이 다름)</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>API</th>
+                        <th>mode 값</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">결제유형 조회 / 시나리오 등록</span></td>
+                        <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">hangung2^alphago_hankyung</code></td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">주문 결제정보 전달</span></td>
+                        <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">hangung^alphago_hankyung</code></td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
         <section class="section">
@@ -426,29 +462,43 @@
 
         <section class="section">
             <h2>연동 흐름</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;"><strong>시나리오 관리 흐름</strong> (결제유형 조회 → 시나리오 등록)</p>
             <div class="code-block" style="background: transparent; border: none; padding: 0;">
                 <pre style="color: var(--text-secondary); line-height: 2;">
-1. 결제유형 조회 API 호출
+1. 결제유형 조회 API 호출 (GET)
    └─ ars_tel_no로 사용 가능한 결제유형 확인
 
 2. 결제유형에 따른 파라미터 설정
    ├─ CQS → 정기결제용 (shop_id: arsstockwin2)
    └─ CIP → 일반/간편결제용 (shop_id: arsstockwin, arsstockwin1)
 
-3. 시나리오 등록 API 호출
+3. 시나리오 등록 API 호출 (POST, form-urlencoded)
    └─ 상품 정보 등록
 
 4. 응답 결과 처리
    ├─ 0000 → 등록 성공
    └─ 그 외 → 에러 메시지 확인</pre>
             </div>
+
+            <p style="color: var(--text-secondary); margin-top: 24px; margin-bottom: 16px;"><strong>주문 결제정보 전달 흐름</strong> (별도 API)</p>
+            <div class="code-block" style="background: transparent; border: none; padding: 0;">
+                <pre style="color: var(--text-secondary); line-height: 2;">
+1. 주문 결제정보 전달 API 호출 (POST, JSON)
+   └─ StockWin에서 다삼솔루션으로 결제정보 전송
+
+2. 응답 결과 처리 (JSON)
+   ├─ 0000 → 등록 성공
+   ├─ 0010 → 중복 주문번호 오류
+   └─ 그 외 → 에러 메시지 확인</pre>
+            </div>
         </section>
 
         <section class="section">
             <h2>응답 파싱</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">응답은 파이프(<code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">|</code>)로 구분된 문자열입니다.</p>
+
+            <p style="color: var(--text-secondary); margin-bottom: 16px;"><strong>결제유형 조회 / 시나리오 등록</strong> - 파이프(<code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">|</code>) 구분 문자열</p>
             <div class="code-block">
-                <pre style="color: var(--text-secondary);">// JavaScript 예시
+                <pre style="color: var(--text-secondary);">// JavaScript 예시 - Plain Text 응답
 const response = "2972|CQS|0000|결제유형획득에 성공하셨습니다.";
 const [ars_tel_no, type_cd_list, error_cd, message] = response.split('|');
 
@@ -457,6 +507,19 @@ if (error_cd === '0000') {
     console.log('결제유형:', types);
 } else {
     console.error('오류:', message);
+}</pre>
+            </div>
+
+            <p style="color: var(--text-secondary); margin-top: 24px; margin-bottom: 16px;"><strong>주문 결제정보 전달</strong> - JSON 응답</p>
+            <div class="code-block">
+                <pre style="color: var(--text-secondary);">// JavaScript 예시 - JSON 응답
+const response = await fetch(url, { method: 'POST', body: JSON.stringify(data) });
+const result = await response.json();
+
+if (result.error_cd === '0000') {
+    console.log('등록 성공:', result.order_no);
+} else {
+    console.error('오류:', result.message);
 }</pre>
             </div>
         </section>
@@ -616,10 +679,160 @@ if (error_cd === '0000') {
                     </div>
                 </div>
             </div>
+
+            <!-- POST 주문 결제정보 전달 -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method method-post">POST</span>
+                    <span class="endpoint-path">/stockwin_order_request.asp</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">StockWin에서 다삼솔루션으로 주문 결제정보를 전달합니다.</p>
+
+                    <div class="response-label">통신 규격</div>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">Content-Type</span></td>
+                                <td><code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">application/json; charset=UTF-8</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">응답 형식</span></td>
+                                <td>JSON</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="response-label" style="margin-top: 20px;">Request Parameters</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">mode</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>인증 모드 (고정값: <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px;">hangung^alphago_hankyung</code>)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">shop_id</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>상점 ID (arsstockwin | arsstockwin1 | arsstockwin2)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">amount</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>결제 금액 (원 단위)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">phone_no</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>핸드폰 번호</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">verify_num</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>인증번호</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">request_type</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>요청 타입</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">alert_show</span></td>
+                                <td>string</td>
+                                <td>선택</td>
+                                <td>알림 표시 여부</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">order_no</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>주문번호 (고유값)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">cc_name</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>주문자명 (필명)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">cc_pord_desc</span></td>
+                                <td>string</td>
+                                <td><span class="required">필수</span></td>
+                                <td>상품명^패키지번호</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="response-label" style="margin-top: 20px;">Request Example</div>
+                    <div class="code-block">
+                        <pre>{
+  "mode": "hangung^alphago_hankyung",
+  "shop_id": "arsstockwin",
+  "amount": "190000",
+  "phone_no": "01012344925",
+  "verify_num": "123456",
+  "request_type": "CIA",
+  "alert_show": "N",
+  "order_no": "202601134267168",
+  "cc_name": "홍길동",
+  "cc_pord_desc": "프리미엄 종목 1개월^102958"
+}</pre>
+                    </div>
+
+                    <div class="response-label">Response Format (JSON)</div>
+                    <div class="code-block">
+                        <pre>{
+  "error_cd": "0000",
+  "message": "주문정보가 등록되었습니다.",
+  "order_no": "202601134267168"
+}</pre>
+                    </div>
+
+                    <div class="response-label">Response Examples</div>
+                    <div class="code-block">
+                        <pre style="color: var(--text-secondary);">// 신규 등록 성공
+{
+  "error_cd": "0000",
+  "message": "주문정보가 등록되었습니다.",
+  "order_no": "202601134267168"
+}
+
+// 실패 (중복 주문번호)
+{
+  "error_cd": "0010",
+  "message": "이미 등록된 주문번호입니다.",
+  "order_no": "202601134267168"
+}
+
+// 실패 (mode 오류)
+{
+  "error_cd": "0001",
+  "message": "mode 값이 올바르지 않습니다.",
+  "order_no": ""
+}</pre>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section class="section">
             <h2>에러 코드</h2>
+
+            <p style="color: var(--text-secondary); margin-bottom: 16px;"><strong>결제유형 조회 / 시나리오 등록 API</strong></p>
             <table>
                 <thead>
                     <tr>
@@ -671,6 +884,66 @@ if (error_cd === '0000') {
                     <tr>
                         <td><span class="param-name">9002</span></td>
                         <td>전화번호 미등록</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p style="color: var(--text-secondary); margin-top: 24px; margin-bottom: 16px;"><strong>주문 결제정보 전달 API</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">0000</span></td>
+                        <td>성공</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0001</span></td>
+                        <td>mode 값 오류</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0002</span></td>
+                        <td>shop_id 누락 또는 유효하지 않음</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0003</span></td>
+                        <td>amount 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0004</span></td>
+                        <td>phone_no 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0005</span></td>
+                        <td>verify_num 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0006</span></td>
+                        <td>request_type 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0007</span></td>
+                        <td>order_no 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0008</span></td>
+                        <td>cc_name 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0009</span></td>
+                        <td>cc_pord_desc 누락</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">0010</span></td>
+                        <td>중복 주문번호 (이미 등록된 order_no)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">9001</span></td>
+                        <td>데이터베이스 오류</td>
                     </tr>
                 </tbody>
             </table>
