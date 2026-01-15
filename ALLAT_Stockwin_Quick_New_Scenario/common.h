@@ -1,0 +1,153 @@
+﻿
+/************************************************************
+
+	common include files.
+
+*************************************************************/
+#include	<windows.h>
+#include	<winsock.h>		// Socket communication 
+#include	<process.h>		// _beginthread, _endthread  
+#include	<winbase.h>		// for critical sections  
+#include	<stddef.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<conio.h>
+#include	<io.h>
+#include	<fcntl.h>
+#include	<direct.h>
+#include	<time.h>
+#include	<sys\types.h>
+#include	<sys\stat.h>
+#include	<srllib.h>
+#include	<dxxxlib.h>
+#include	<vmsdef.h>
+#include	<winio.h>
+#include	<winmsi.h>
+
+#define	MYEXPORT	extern __declspec(dllexport)
+#include	<winftp.h>
+
+#include	<winfunc.h>
+//#include	<msmq.h>
+
+
+
+
+#ifdef __cplusplus
+extern "C" {               // C Plus Plus function bindings
+#endif
+
+int SctDecode(int nPayloadType, int nSourceSize, unsigned char *pbtSource, int *pnTargetSize, unsigned char *pbtTarget);
+
+#ifdef __cplusplus
+}
+#endif
+
+extern	"C"	void timedVMS(void);
+
+
+/************************************************************
+
+	D E F I N E . H - 각종 상수 선언부
+
+*************************************************************/
+#ifndef u_char
+#define u_char	unsigned char
+#define u_int	unsigned int
+#define u_long	unsigned long
+#endif
+
+#define	TITLE_NAME	"ISDN PRI E1 - ARS"
+#define	MAXSTRING	200
+#define	MSG_SET_VIEW		WM_USER + 00
+#define	MSG_INIT_LINE		WM_USER + 01
+#define	MSG_SET_LINE		WM_USER + 02
+#define	MSG_INBOUND_LINE	WM_USER + 03
+#define	MSG_ASR_LINE	    WM_USER + 04
+
+#define	PARAINI		".\\para.ini"
+#define MAXCHAN 	240		// 최대 회선 수
+//#define MAXCHAN 	120		// 최대 회선 수
+
+
+#define TRUE		1		// 참
+#define FALSE		0		// 거짓
+
+#define HI_OK		0
+#define HI_COMM 	98	// 통신 장애
+#define HI_BADPKT	97	// BAD Packet
+
+//////////////////////////////////////////////////////////////////////
+#define VOC_MAIL_ID	500
+#define VOC_MESG_ID	501
+#define VOC_TEMP_ID	502
+#define VOC_TTS_ID  503
+#define VOC_WAVE_ID 504
+#define VOC_MAIL	20		// 안내문
+#define	VOC_MESG	21		// 사서함 메세지
+#define VOC_TEMP	22		// Temp
+#define VOC_TTS  	23		// TTS
+#define VOC_WAVE  	24		// WAVE
+///////////////////////////////////////////////////////////////////////
+
+// Port 구분
+#define	SERVER_PORT		(API_PORT) + 0
+
+int		start_atx(int mode);
+void	start_log(int chan);
+void	save_log(int chan);
+int		app_StartAppVox(int type);
+void	set_apptype(void);
+
+int		open_mail(char *fname, int gno);
+int		open_ment(char *fname, char *ment);
+int     open_tts(char *fname, char *ment);
+int     open_wave(char *fname, char *ment);//2016.06.19 추가 wave 재생
+char	*get_temppath(char *fname, int ch);
+int		open_temp(char *fname, int ch);
+int		creat_temp(int ch);
+
+void	hostio(LPMTP *lineTablePtr);
+int		xmt_host(int jobid, int holdm);
+int		xmt_resp();
+
+int		ExtractItems(char *bp, char delimeter, char **valp);
+void	sysinit(void);
+
+void	setLineAttrib(int chan);
+int		start_vms(void);
+
+void	log_trace(char *pStr);
+void	log_trace2(char *pStr);
+
+void	startVMS(void *dummy);
+int		win_main(void);
+void	ReleasePtr();
+
+
+int		getLanguage(void);
+int		open_playfile(int type, va_list *arg_ptr_ptr);
+
+//획득한 음성블록을 음성엔진에 전달하기 위한 함후
+int		recogSaveStream(int chan, char *buffer, int length);//소켓
+
+//획득한 음성블록을 음성엔진에 전달하기 위한 함후
+int		recogSaveStreamM2M(int chan, char *buffer, int length);//엔진
+
+
+int		jobBegin(int);
+int		jobARS(int state);
+
+int		Init_Rec(int chan, int grmtype);//그래머 설정 
+int		Init_RecM2M(int chan, char *pszGramFile);//그래머 설정 
+
+int		Close_Rec(int chan);
+int     Close_RecM2M(int chan);
+
+int     TTS_Play(int chan, char *pPlayBuf);
+int     TTS_Play2(int chan, int nCnt, char *pPlayBuf);
+
+void info_printf(int chan, const char *str, ...);
+
+int  Smchost(int holdm, int holdm2=0);
+int  SmcExithost(int holdm, char *pTelNum);
