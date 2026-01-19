@@ -111,7 +111,7 @@ strConnect = "Provider=SQLOLEDB.1;Password=medi@ford;Persist Security Info=True;
 Dim MODE_VALUE, PG_CODE_VALUE, DLL_NAME_VALUE
 MODE_VALUE = "hangung2^alphago_hankyung"
 PG_CODE_VALUE = "allat"
-DLL_NAME_VALUE = "ALLAT_StockWin_Billkey_Easy_New_Scenario.dll"
+DLL_NAME_VALUE = "ALLAT_Stockwin_Quick_New_Scenario.dll"
 
 ' 요청 파라미터 수신 (Raw POST 데이터에서 직접 파싱)
 Dim strMode, shop_id, ars_tel_no, scenario_type, arrribute_type

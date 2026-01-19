@@ -68,6 +68,8 @@ extern int  upOrderPayState_host(int holdm);
 extern int   getSMSOrderInfo_host(int holdm);
 
 extern int getTcpOrderInfo_host(int holdm);
+extern int getOrderInfo_NewAPI_host(int holdm);
+extern int getOrderInfo_host_wrapper(int holdm);  // USE_NEW_API 분기 처리
 
 int ALLAT_ArsScenarioStart(/* [in] */int state);
 int ALLAT_SMSScenarioStart(/* [in] */int state);
@@ -1848,7 +1850,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			return ALLAT_CIA_ScenarioStart(11);
 		}
 		setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-		return getTcpOrderInfo_host(90);
+		return getOrderInfo_host_wrapper(90);
 
 
 
@@ -1941,7 +1943,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
 
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-			return getTcpOrderInfo_host(90);
+			return getOrderInfo_host_wrapper(90);
 		}
 		else if (c == '2')//아니오
 		{

@@ -13,12 +13,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include	<process.h>		// _beginthread, _endthread  
+#include	<process.h>		// _beginthread, _endthread
 #include <afx.h>
 #include <iostream>
 #include <cstring>
 #include <atlstr.h>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
 
 // 2015.09.17 Web Server와 연동하기 위해서 추가
 #include <AfxInet.h>

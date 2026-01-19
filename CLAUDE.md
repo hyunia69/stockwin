@@ -59,9 +59,17 @@ Visual Studio C++ 프로젝트입니다. 빌드 전 필요 사항:
 - Dialogic IVR SDK 헤더 및 라이브러리
 - MS ADO 런타임 (`C:\Program Files\Common Files\System\ADO\msado15.dll`)
 
+실제 빌드는 windows server 2016 환경에서 수행합니다.
+- c:\dasam\windows_pri_20220113\windows_pri\allat_stockwin_quick_new_scenario\ 가 디렉토리입니다.
+- 로컬에서 파일을 수정하는 디렉토리와는 다릅니다.
+- 로컬에서 수정된 파일을 빌드서버에 복사해서 넣고 빌드를 합니다.
+- 빌드시 오류 메시지는 빌드서버의 디렉토리를 나타내고 있음을 참조히세요요
+
+
 ## 인코딩
 
 모든 소스 파일은 UTF-8 with BOM 인코딩입니다. `convert_encoding.py` 스크립트로 EUC-KR/CP949에서 변환되었습니다.
+새로 생성되는 모든 파일은 UTF-8 with BOM 인코딩해야 합니다.
 
 ## 코드 스타일
 

@@ -11,6 +11,7 @@
 #include    "Scenaio.h"
 #include    "AllatUtil.h"
 #include    "ALLAT_Stockwin_Quick_New_Scenario.h"
+#include    "PayLetterAPI.h"
 
 
 
@@ -959,16 +960,32 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// PayLetter API 호출
 	PL_PaymentInfo plInfo;
-	std::string dnis(pScenario->szDnis);
-	std::string phoneNo(pScenario->m_szInputTel);
+	PL_InitPaymentInfo(&plInfo);
 
-	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, PhoneNo=%s", ch, dnis.c_str(), phoneNo.c_str());
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, PhoneNo=%s", ch, pScenario->szDnis, pScenario->m_szInputTel);
 
 	// reqType=1 (회선번호), arsType="VARS" (보는ARS)
-	if (!PL_GetPaymentInfo(1, dnis, phoneNo, "VARS", plInfo)) {
+	if (!PL_GetPaymentInfo(1, pScenario->szDnis, pScenario->m_szInputTel, "VARS", &plInfo)) {
 		// API 호출 실패
-		std::string errMsg = PL_GetLastError();
-		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 호출 실패 - %s", ch, errMsg.c_str());
+		char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
+		PL_GetLastError(errMsg, sizeof(errMsg));
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 호출 실패 - %s", ch, errMsg);
+
+		// 폴백 설정 확인 - 레거시 API로 전환
+		if (g_plConfig.useLegacyFallback) {
+			xprintf("[CH:%03d] PL_InfoOrderReq_Process: Fallback to legacy API", ch);
+
+			// 레거시 ASP API 호출
+			CString sendURL;
+			sendURL.Format("https://billadmin.wownet.co.kr/pgmodule/DasomARS/UserCall/orderRequestApi.asp?DNIS=%s&HP_NO=%s",
+						   (LPCTSTR)pScenario->szDnis, (LPCTSTR)pScenario->m_szInputTel);
+			Http_SSL_RetPageSend(data, sendURL.GetBuffer(), "POST");
+
+			// 이후 처리는 Wow_InfoRodocReq_Process의 XML 파싱 로직과 동일하게 진행해야 함
+			// 현재는 에러로 처리하고 종료 (추후 완전한 폴백 구현 필요시 확장)
+			xprintf("[CH:%03d] PL_InfoOrderReq_Process: Legacy API fallback initiated, check m_szHttpBuffer", ch);
+		}
+
 		pScenario->m_bDnisInfo = -1;
 
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API call failed", ch);
@@ -977,9 +994,9 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	}
 
 	// 결과 코드 확인
-	if (plInfo.resultCode != "0") {
+	if (strcmp(plInfo.resultCode, "0") != 0) {
 		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 응답 오류 - resultCode=%s",
-				ch, plInfo.resultCode.c_str());
+				ch, plInfo.resultCode);
 		pScenario->m_bDnisInfo = 0;
 
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API response error", ch);
@@ -988,15 +1005,16 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	}
 
 	// 구매 제한 확인
-	if (plInfo.purchaseLimitFlag != "1") {
-		std::string limitMsg = PL_GetPurchaseLimitMessage(plInfo.purchaseLimitFlag);
+	if (strcmp(plInfo.purchaseLimitFlag, "1") != 0) {
+		char limitMsg[256] = { 0 };
+		PL_GetPurchaseLimitMessage(plInfo.purchaseLimitFlag, limitMsg, sizeof(limitMsg));
 		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 구매 제한 - %s (flag=%s)",
-				ch, limitMsg.c_str(), plInfo.purchaseLimitFlag.c_str());
+				ch, limitMsg, plInfo.purchaseLimitFlag);
 		pScenario->m_bDnisInfo = 0;
 
 		// 구매 제한 플래그 저장
 		strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),
-				  plInfo.purchaseLimitFlag.c_str(), sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
+				  plInfo.purchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
 
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process purchase limit", ch);
 		_endthreadex((unsigned int)(*port)[ch].m_hThread);
@@ -1004,9 +1022,9 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	}
 
 	// 서비스 점검 확인
-	if (plInfo.serviceCheckFlag == "Y") {
+	if (strcmp(plInfo.serviceCheckFlag, "Y") == 0) {
 		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 서비스 점검 중 - 완료 예정: %s",
-				ch, plInfo.checkCompleteTime.c_str());
+				ch, plInfo.checkCompleteTime);
 		pScenario->m_bDnisInfo = 0;
 
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process service maintenance", ch);
@@ -1044,30 +1062,30 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// 가맹점 아이디 (일반결제: mallIdGeneral)
 	strncpy_s(pScenario->m_szMx_id, sizeof(pScenario->m_szMx_id),
-			  plInfo.mallIdGeneral.c_str(), sizeof(pScenario->m_szMx_id) - 1);
+			  plInfo.mallIdGeneral, sizeof(pScenario->m_szMx_id) - 1);
 
 	// 회원ID (memberId → cc_name 대체)
 	strncpy_s(pScenario->m_szCC_name, sizeof(pScenario->m_szCC_name),
-			  plInfo.memberId.c_str(), sizeof(pScenario->m_szCC_name) - 1);
+			  plInfo.memberId, sizeof(pScenario->m_szCC_name) - 1);
 
 	// 상품명
 	strncpy_s(pScenario->m_szCC_Prod_Desc, sizeof(pScenario->m_szCC_Prod_Desc),
-			  plInfo.itemName.c_str(), sizeof(pScenario->m_szCC_Prod_Desc) - 1);
+			  plInfo.itemName, sizeof(pScenario->m_szCC_Prod_Desc) - 1);
 
 	// 필명 (nickName → partner_nm 대체, TTS 안내용)
 	strncpy_s(pScenario->m_szpsrtner_nm, sizeof(pScenario->m_szpsrtner_nm),
-			  plInfo.nickName.c_str(), sizeof(pScenario->m_szpsrtner_nm) - 1);
+			  plInfo.nickName, sizeof(pScenario->m_szpsrtner_nm) - 1);
 
 	// 상품코드 (categoryId_2nd 사용)
 	strncpy_s(pScenario->m_szCC_Prod_Code, sizeof(pScenario->m_szCC_Prod_Code),
-			  plInfo.categoryId_2nd.c_str(), sizeof(pScenario->m_szCC_Prod_Code) - 1);
+			  plInfo.categoryId_2nd, sizeof(pScenario->m_szCC_Prod_Code) - 1);
 
 	// 결제금액
 	pScenario->m_nAmount = plInfo.payAmt;
 
 	// 회원ID (UUID) 별도 저장
 	strncpy_s(pScenario->m_szMemberId, sizeof(pScenario->m_szMemberId),
-			  plInfo.memberId.c_str(), sizeof(pScenario->m_szMemberId) - 1);
+			  plInfo.memberId, sizeof(pScenario->m_szMemberId) - 1);
 
 	// ========================================================================
 	// 신규 필드 저장
@@ -1078,27 +1096,27 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// 쿠폰 정보
 	strncpy_s(pScenario->m_szCouponUseFlag, sizeof(pScenario->m_szCouponUseFlag),
-			  plInfo.couponUseFlag.c_str(), sizeof(pScenario->m_szCouponUseFlag) - 1);
+			  plInfo.couponUseFlag, sizeof(pScenario->m_szCouponUseFlag) - 1);
 	strncpy_s(pScenario->m_szCouponName, sizeof(pScenario->m_szCouponName),
-			  plInfo.couponName.c_str(), sizeof(pScenario->m_szCouponName) - 1);
+			  plInfo.couponName, sizeof(pScenario->m_szCouponName) - 1);
 
 	// 보너스 캐시 정보
 	strncpy_s(pScenario->m_szBonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag),
-			  plInfo.bonusCashUseFlag.c_str(), sizeof(pScenario->m_szBonusCashUseFlag) - 1);
+			  plInfo.bonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag) - 1);
 	pScenario->m_nBonusCashUseAmt = plInfo.bonusCashUseAmt;
 
 	// 구매 제한/상태 정보
 	strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),
-			  plInfo.purchaseLimitFlag.c_str(), sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
+			  plInfo.purchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
 	strncpy_s(pScenario->m_szPgCode, sizeof(pScenario->m_szPgCode),
-			  plInfo.pgCode.c_str(), sizeof(pScenario->m_szPgCode) - 1);
+			  plInfo.pgCode, sizeof(pScenario->m_szPgCode) - 1);
 	pScenario->m_nMemberState = plInfo.memberState;
 	strncpy_s(pScenario->m_szServiceCheckFlag, sizeof(pScenario->m_szServiceCheckFlag),
-			  plInfo.serviceCheckFlag.c_str(), sizeof(pScenario->m_szServiceCheckFlag) - 1);
+			  plInfo.serviceCheckFlag, sizeof(pScenario->m_szServiceCheckFlag) - 1);
 
 	// Notification URL (일반결제)
 	strncpy_s(pScenario->m_szSHOP_RET_URL, sizeof(pScenario->m_szSHOP_RET_URL),
-			  plInfo.notiUrlGeneral.c_str(), sizeof(pScenario->m_szSHOP_RET_URL) - 1);
+			  plInfo.notiUrlGeneral, sizeof(pScenario->m_szSHOP_RET_URL) - 1);
 	if (strlen(pScenario->m_szSHOP_RET_URL) > 0) {
 		strncpy_s(pScenario->m_szURL_YN, sizeof(pScenario->m_szURL_YN), "Y", 1);
 	}
@@ -1241,6 +1259,57 @@ int getOrderInfo_NewAPI_host(int holdm)
 			&(((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->threadID));
 
 	return 0;
+}
+
+// ============================================================================
+// USE_NEW_API 분기 처리 Wrapper 함수
+// INI 설정에 따라 신규 REST API 또는 레거시 ASP API 호출
+// 작성일: 2026-01-19
+// ============================================================================
+
+int getOrderInfo_host_wrapper(int holdm)
+{
+	char szUseNewApi[8] = { 0 };
+	char szIsLive[8] = { 0 };
+	int isLive = 0;
+
+	// INI에서 USE_NEW_API 설정 읽기
+	GetPrivateProfileStringA("PAYLETTER_API", "USE_NEW_API", "false",
+							 szUseNewApi, sizeof(szUseNewApi), PARAINI);
+
+	// 서버 환경 확인 (운영/QA)
+	GetPrivateProfileStringA("SERVER", "IS_LIVE", "false",
+							 szIsLive, sizeof(szIsLive), PARAINI);
+	isLive = (_stricmp(szIsLive, "true") == 0) ? 1 : 0;
+
+	xprintf("[getOrderInfo_host_wrapper] USE_NEW_API=%s, IS_LIVE=%s",
+			szUseNewApi, szIsLive);
+
+	if (_stricmp(szUseNewApi, "true") == 0) {
+		// 신규 REST API 사용
+		xprintf("[getOrderInfo_host_wrapper] Using NEW PayLetter REST API");
+
+		// PayLetter API 초기화
+		if (!PL_Initialize(PARAINI, isLive)) {
+			char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
+			PL_GetLastError(errMsg, sizeof(errMsg));
+			xprintf("[getOrderInfo_host_wrapper] PL_Initialize failed: %s", errMsg);
+
+			// 폴백 설정 확인
+			if (g_plConfig.useLegacyFallback) {
+				xprintf("[getOrderInfo_host_wrapper] Fallback to legacy API");
+				return getTcpOrderInfo_host(holdm);
+			}
+			return -1;
+		}
+
+		return getOrderInfo_NewAPI_host(holdm);
+	}
+	else {
+		// 레거시 ASP API 사용
+		xprintf("[getOrderInfo_host_wrapper] Using LEGACY ASP API");
+		return getTcpOrderInfo_host(holdm);
+	}
 }
 
 // TTS 안내 문구 생성 함수
