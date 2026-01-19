@@ -14,6 +14,36 @@ Response.CharSet = "UTF-8"
 Response.ContentType = "application/json; charset=UTF-8"
 
 ' ============================================
+' 로그 함수
+' ============================================
+
+Sub WriteLog(message)
+    On Error Resume Next
+    Dim fso, logFile, logPath, logFolder
+
+    ' 로그 폴더 경로 (현재 ASP 파일 위치의 logs 하위 폴더)
+    logFolder = Server.MapPath("logs")
+    logPath = logFolder & "\stockwin_order_" & Year(Now) & Right("0" & Month(Now), 2) & Right("0" & Day(Now), 2) & ".log"
+
+    Set fso = Server.CreateObject("Scripting.FileSystemObject")
+
+    ' 로그 폴더가 없으면 생성
+    If Not fso.FolderExists(logFolder) Then
+        fso.CreateFolder(logFolder)
+    End If
+
+    ' 로그 파일 열기 (없으면 생성, 있으면 추가)
+    Set logFile = fso.OpenTextFile(logPath, 8, True)
+
+    logFile.WriteLine "[" & Now & "] " & message
+    logFile.Close
+
+    Set logFile = Nothing
+    Set fso = Nothing
+    On Error GoTo 0
+End Sub
+
+' ============================================
 ' UTF-8 처리 함수 (ADODB.Stream 사용)
 ' ============================================
 
@@ -171,65 +201,83 @@ order_no = Trim(GetJsonValue(jsonData, "order_no"))
 cc_name = Trim(GetJsonValue(jsonData, "cc_name"))
 cc_pord_desc = Trim(GetJsonValue(jsonData, "cc_pord_desc"))
 
+' 요청 로그 기록
+WriteLog "========== REQUEST START =========="
+WriteLog "mode=" & strMode
+WriteLog "shop_id=" & shop_id & ", phone_no=" & phone_no & ", amount=" & amount
+WriteLog "order_no=" & order_no & ", request_type=" & request_type
+WriteLog "cc_name=" & cc_name & ", cc_pord_desc=" & cc_pord_desc
+WriteLog "verify_num=" & verify_num & ", alert_show=" & alert_show
+
 ' ============================================
 ' 파라미터 검증
 ' ============================================
 
 ' mode 검증
 If strMode <> MODE_VALUE Then
+    WriteLog "RESPONSE: error_cd=0001, message=mode 값이 올바르지 않습니다."
     WriteUTF8Response MakeJsonResponse("0001", "mode 값이 올바르지 않습니다.", order_no)
     Response.End
 End If
 
 ' shop_id 검증
 If shop_id = "" Then
+    WriteLog "RESPONSE: error_cd=0002, message=shop_id가 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0002", "shop_id가 누락되었습니다.", order_no)
     Response.End
 End If
 
 If shop_id <> "arsstockwin" And shop_id <> "arsstockwin1" And shop_id <> "arsstockwin2" Then
+    WriteLog "RESPONSE: error_cd=0002, message=유효하지 않은 shop_id입니다."
     WriteUTF8Response MakeJsonResponse("0002", "유효하지 않은 shop_id입니다.", order_no)
     Response.End
 End If
 
 ' amount 검증
 If amount = "" Then
+    WriteLog "RESPONSE: error_cd=0003, message=amount가 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0003", "amount가 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' phone_no 검증
 If phone_no = "" Then
+    WriteLog "RESPONSE: error_cd=0004, message=phone_no가 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0004", "phone_no가 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' verify_num 검증
 If verify_num = "" Then
+    WriteLog "RESPONSE: error_cd=0005, message=verify_num이 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0005", "verify_num이 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' request_type 검증
 If request_type = "" Then
+    WriteLog "RESPONSE: error_cd=0006, message=request_type이 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0006", "request_type이 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' order_no 검증
 If order_no = "" Then
+    WriteLog "RESPONSE: error_cd=0007, message=order_no가 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0007", "order_no가 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' cc_name 검증
 If cc_name = "" Then
+    WriteLog "RESPONSE: error_cd=0008, message=cc_name이 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0008", "cc_name이 누락되었습니다.", order_no)
     Response.End
 End If
 
 ' cc_pord_desc 검증
 If cc_pord_desc = "" Then
+    WriteLog "RESPONSE: error_cd=0009, message=cc_pord_desc가 누락되었습니다."
     WriteUTF8Response MakeJsonResponse("0009", "cc_pord_desc가 누락되었습니다.", order_no)
     Response.End
 End If
@@ -266,6 +314,7 @@ Set dbCon = Server.CreateObject("ADODB.Connection")
 dbCon.Open strConnect
 
 If Err.Number <> 0 Then
+    WriteLog "RESPONSE: error_cd=9001, message=데이터베이스 연결 실패: " & Err.Description
     WriteUTF8Response MakeJsonResponse("9001", "데이터베이스 연결 실패: " & Err.Description, order_no)
     Response.End
 End If
@@ -275,6 +324,7 @@ qry = "SELECT COUNT(*) AS cnt FROM ALLAT_SHOP_ORDER WHERE MX_ISSUE_NO LIKE '" & 
 Set rs = dbCon.Execute(qry)
 
 If Err.Number <> 0 Then
+    WriteLog "RESPONSE: error_cd=9001, message=데이터베이스 조회 실패: " & Err.Description
     dbCon.Close
     Set dbCon = Nothing
     WriteUTF8Response MakeJsonResponse("9001", "데이터베이스 조회 실패: " & Err.Description, order_no)
@@ -287,6 +337,7 @@ Set rs = Nothing
 
 If orderCount > 0 Then
     ' 이미 존재하는 주문번호 - 중복 오류 반환
+    WriteLog "RESPONSE: error_cd=0010, message=이미 등록된 주문번호입니다."
     dbCon.Close
     Set dbCon = Nothing
     WriteUTF8Response MakeJsonResponse("0010", "이미 등록된 주문번호입니다.", order_no)
@@ -320,6 +371,7 @@ qry = "INSERT INTO ALLAT_SHOP_ORDER (" & _
 dbCon.Execute qry
 
 If Err.Number <> 0 Then
+    WriteLog "RESPONSE: error_cd=9001, message=데이터 등록 실패: " & Err.Description
     dbCon.Close
     Set dbCon = Nothing
     WriteUTF8Response MakeJsonResponse("9001", "데이터 등록 실패: " & Err.Description, order_no)
@@ -332,5 +384,7 @@ Set dbCon = Nothing
 On Error GoTo 0
 
 ' 성공 응답 (등록)
+WriteLog "RESPONSE: error_cd=0000, message=주문정보가 등록되었습니다., mx_issue_no=" & mx_issue_no
+WriteLog "========== REQUEST END ============"
 WriteUTF8Response MakeJsonResponse("0000", "주문정보가 등록되었습니다.", order_no)
 %>
