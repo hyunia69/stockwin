@@ -966,40 +966,33 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// reqType=1 (회선번호), arsType="VARS" (보는ARS)
 	if (!PL_GetPaymentInfo(1, pScenario->szDnis, pScenario->m_szInputTel, "VARS", &plInfo)) {
-		// API 호출 실패
+		// API 호출 실패 - 에러 처리 (폴백 없음)
 		char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
 		PL_GetLastError(errMsg, sizeof(errMsg));
-		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 호출 실패 - %s", ch, errMsg);
-
-		// 폴백 설정 확인 - 레거시 API로 전환
-		if (g_plConfig.useLegacyFallback) {
-			xprintf("[CH:%03d] PL_InfoOrderReq_Process: Fallback to legacy API", ch);
-
-			// 레거시 ASP API 호출
-			CString sendURL;
-			sendURL.Format("https://billadmin.wownet.co.kr/pgmodule/DasomARS/UserCall/orderRequestApi.asp?DNIS=%s&HP_NO=%s",
-						   (LPCTSTR)pScenario->szDnis, (LPCTSTR)pScenario->m_szInputTel);
-			Http_SSL_RetPageSend(data, sendURL.GetBuffer(), "POST");
-
-			// 이후 처리는 Wow_InfoRodocReq_Process의 XML 파싱 로직과 동일하게 진행해야 함
-			// 현재는 에러로 처리하고 종료 (추후 완전한 폴백 구현 필요시 확장)
-			xprintf("[CH:%03d] PL_InfoOrderReq_Process: Legacy API fallback initiated, check m_szHttpBuffer", ch);
-		}
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: ========== API 호출 실패 ==========", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, PhoneNo=%s", ch, pScenario->szDnis, pScenario->m_szInputTel);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: ErrorMessage=%s", ch, errMsg);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 주문 정보 없음 - 에러 처리 진행", ch);
 
 		pScenario->m_bDnisInfo = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
 
-		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API call failed", ch);
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API call failed - no order found", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END (API Error)", ch);
 		_endthreadex((unsigned int)(*port)[ch].m_hThread);
 		return -1;
 	}
 
 	// 결과 코드 확인
 	if (strcmp(plInfo.resultCode, "0") != 0) {
-		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 응답 오류 - resultCode=%s",
-				ch, plInfo.resultCode);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: ========== API 응답 오류 ==========", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: resultCode=%s (expected: 0)", ch, plInfo.resultCode);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: resultMessage=%s", ch, plInfo.resultMessage);
 		pScenario->m_bDnisInfo = 0;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
 
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API response error", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END (Result Error)", ch);
 		_endthreadex((unsigned int)(*port)[ch].m_hThread);
 		return 0;
 	}
@@ -1219,14 +1212,15 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 		}
 
 		pScenario->m_bDnisInfo = 1; // 성공
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: ========== 처리 완료 (성공) ==========", ch);
 	}
 	else {
 		pScenario->m_bDnisInfo = 0;
-		xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 저장 실패", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: ========== DB 저장 실패 ==========", ch);
 	}
 
-	Wow_REQ_Quithostio("PL_InfoOrderReq_Process SUCCESS", ch);
-	xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+	Wow_REQ_Quithostio("PL_InfoOrderReq_Process completed", ch);
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process END (m_bDnisInfo=%d)", ch, pScenario->m_bDnisInfo);
 
 	_endthreadex((unsigned int)(*port)[ch].m_hThread);
 	return 0;

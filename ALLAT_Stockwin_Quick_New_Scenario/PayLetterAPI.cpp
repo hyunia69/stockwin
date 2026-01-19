@@ -33,6 +33,7 @@ static char g_lastError[PL_MAX_ERROR_MSG + 1] = { 0 };
 
 // 외부 로깅 함수 포인터
 extern void(*xprintf)(const char *str, ...);
+extern void(*eprintf)(const char *str, ...);
 
 // ============================================================================
 // 구조체 초기화 함수
@@ -519,8 +520,19 @@ int PL_HttpPost(const char* endpoint, const char* jsonBody,
         strHeaders.Format(_T("Content-Type: application/json; charset=utf-8\r\nAuthorization: %s\r\n"),
                          CString(authHeader));
 
-        PL_Log("PL_HttpPost: URL=%s", fullUrl);
+        // eprintf 로그 출력
+        if (eprintf) {
+            eprintf("[PayLetterAPI] PL_HttpPost: ========== API 요청 시작 ==========");
+            eprintf("[PayLetterAPI] PL_HttpPost: URL=%s", fullUrl);
+            eprintf("[PayLetterAPI] PL_HttpPost: Server=%s, Port=%d", (LPCTSTR)strServer, nPort);
+        }
+
+        PL_Log("PL_HttpPost: Endpoint=%s", endpoint);
+        PL_Log("PL_HttpPost: Authorization=%s...%s (masked)",
+               strlen(authHeader) > 20 ? "BASIC " : "",
+               strlen(authHeader) > 20 ? "(hidden)" : authHeader);
         PL_Log("PL_HttpPost: Body=%s", jsonBody ? jsonBody : "(null)");
+        PL_Log("PL_HttpPost: BodyLength=%d", jsonBody ? (int)strlen(jsonBody) : 0);
 
         // 요청 전송
         bodyLen = jsonBody ? (int)strlen(jsonBody) : 0;
@@ -552,8 +564,14 @@ int PL_HttpPost(const char* endpoint, const char* jsonBody,
         }
         outResponse[totalRead] = '\0';
 
-        PL_Log("PL_HttpPost: StatusCode=%d", (int)dwStatus);
-        PL_Log("PL_HttpPost: Response=%s", outResponse);
+        // eprintf 로그 출력
+        if (eprintf) {
+            eprintf("[PayLetterAPI] PL_HttpPost: ========== API 응답 수신 ==========");
+            eprintf("[PayLetterAPI] PL_HttpPost: StatusCode=%d, ResponseLength=%d", (int)dwStatus, totalRead);
+            eprintf("[PayLetterAPI] PL_HttpPost: Response=%s", outResponse);
+        }
+
+        PL_Log("PL_HttpPost: ========== API 요청 완료 ==========");
 
         delete pFile;
         delete pConnection;
@@ -565,6 +583,7 @@ int PL_HttpPost(const char* endpoint, const char* jsonBody,
     catch (CInternetException* pEx) {
         TCHAR szError[256];
         char errMsg[512];
+        DWORD dwError = pEx->m_dwError;
 
         memset(szError, 0, sizeof(szError));
         memset(errMsg, 0, sizeof(errMsg));
@@ -572,8 +591,11 @@ int PL_HttpPost(const char* endpoint, const char* jsonBody,
         pEx->GetErrorMessage(szError, 256);
         CStringA strErrorA(szError);
 
-        sprintf_s(errMsg, sizeof(errMsg), "HTTP 예외: %s", (const char*)strErrorA);
+        sprintf_s(errMsg, sizeof(errMsg), "HTTP 예외: %s (ErrorCode=%lu)", (const char*)strErrorA, dwError);
         PL_SetLastError(errMsg);
+        PL_Log("PL_HttpPost: ========== API 예외 발생 ==========");
+        PL_Log("PL_HttpPost: ErrorCode=%lu", dwError);
+        PL_Log("PL_HttpPost: ErrorMessage=%s", (const char*)strErrorA);
         pEx->Delete();
 
         if (pFile) delete pFile;
@@ -613,11 +635,25 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
     // 휴대폰번호 정규화
     PL_NormalizePhoneNo(phoneNo, normalizedPhone, sizeof(normalizedPhone));
 
+    // eprintf 로그 출력
+    if (eprintf) {
+        eprintf("[PayLetterAPI] PL_GetPaymentInfo: ========== 결제정보 조회 시작 ==========");
+        eprintf("[PayLetterAPI] PL_GetPaymentInfo: reqType=%d, reqTypeVal=%s, phoneNo=%s, arsType=%s",
+                reqType, reqTypeVal ? reqTypeVal : "(null)", normalizedPhone, arsType ? arsType : "(null)");
+    }
+
+    PL_Log("PL_GetPaymentInfo: ========== 결제정보 조회 시작 ==========");
+    PL_Log("PL_GetPaymentInfo: reqType=%d, reqTypeVal=%s", reqType, reqTypeVal ? reqTypeVal : "(null)");
+    PL_Log("PL_GetPaymentInfo: phoneNo=%s -> normalized=%s", phoneNo ? phoneNo : "(null)", normalizedPhone);
+    PL_Log("PL_GetPaymentInfo: arsType=%s", arsType ? arsType : "(null)");
+
     // JSON 요청 생성
     PL_JsonBuildRequest(reqType, reqTypeVal, normalizedPhone, arsType, jsonBody, sizeof(jsonBody));
+    PL_Log("PL_GetPaymentInfo: JSON Request=%s", jsonBody);
 
     // API 호출
     if (!PL_HttpPost("/v1/payment/simple/getpaymentinfo_V2", jsonBody, response, sizeof(response), &statusCode)) {
+        PL_Log("PL_GetPaymentInfo: HTTP 요청 실패");
         return 0;
     }
 
@@ -654,8 +690,18 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
             PL_JsonGetString(response, "billKey", outInfo->billKey, sizeof(outInfo->billKey));
             PL_JsonGetString(response, "billPassword", outInfo->billPassword, sizeof(outInfo->billPassword));
 
-            PL_Log("PL_GetPaymentInfo: 성공 - orderNo=%lld, payAmt=%d, nickName=%s",
-                   outInfo->orderNo, outInfo->payAmt, outInfo->nickName);
+            PL_Log("PL_GetPaymentInfo: ========== 결제정보 조회 성공 ==========");
+            PL_Log("PL_GetPaymentInfo: resultCode=%s", outInfo->resultCode);
+            PL_Log("PL_GetPaymentInfo: memberId=%s", outInfo->memberId);
+            PL_Log("PL_GetPaymentInfo: orderNo=%lld", outInfo->orderNo);
+            PL_Log("PL_GetPaymentInfo: nickName=%s", outInfo->nickName);
+            PL_Log("PL_GetPaymentInfo: itemName=%s", outInfo->itemName);
+            PL_Log("PL_GetPaymentInfo: pgCode=%s", outInfo->pgCode);
+            PL_Log("PL_GetPaymentInfo: payAmt=%d, purchaseAmt=%d", outInfo->payAmt, outInfo->purchaseAmt);
+            PL_Log("PL_GetPaymentInfo: purchaseLimitFlag=%s", outInfo->purchaseLimitFlag);
+            PL_Log("PL_GetPaymentInfo: payAgreeFlag=%s", outInfo->payAgreeFlag);
+            PL_Log("PL_GetPaymentInfo: memberState=%d", outInfo->memberState);
+            PL_Log("PL_GetPaymentInfo: billKey=%s", strlen(outInfo->billKey) > 0 ? "(exists)" : "(empty)");
 
             return 1;
         }
@@ -664,6 +710,8 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
             sprintf_s(outInfo->resultMessage, sizeof(outInfo->resultMessage),
                       "API 응답 resultCode: %s", outInfo->resultCode);
             PL_SetLastError(outInfo->resultMessage);
+            PL_Log("PL_GetPaymentInfo: ========== 결제정보 조회 실패 (resultCode!=0) ==========");
+            PL_Log("PL_GetPaymentInfo: resultCode=%s", outInfo->resultCode);
             return 0;
         }
     }
@@ -677,8 +725,10 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
         }
 
         PL_SetLastError(outInfo->resultMessage);
-        PL_Log("PL_GetPaymentInfo: 실패 - statusCode=%d, errorCode=%d, message=%s",
-               statusCode, outInfo->errorCode, outInfo->resultMessage);
+        PL_Log("PL_GetPaymentInfo: ========== 결제정보 조회 실패 (HTTP 오류) ==========");
+        PL_Log("PL_GetPaymentInfo: statusCode=%d", statusCode);
+        PL_Log("PL_GetPaymentInfo: errorCode=%d", outInfo->errorCode);
+        PL_Log("PL_GetPaymentInfo: errorMessage=%s", outInfo->resultMessage);
 
         return 0;
     }
@@ -801,7 +851,7 @@ void PL_Log(const char* format, ...)
     char buffer[2048];
     va_list args;
 
-    if (xprintf == NULL) {
+    if (eprintf == NULL) {
         return;
     }
 
@@ -810,5 +860,5 @@ void PL_Log(const char* format, ...)
     vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
     va_end(args);
 
-    xprintf("[PayLetterAPI] %s", buffer);
+    eprintf("[PayLetterAPI] %s", buffer);
 }

@@ -1724,7 +1724,7 @@ int ALLAT_ArsScenarioStart(/* [in] */int state)
 			eprintf("ALLAT_WOWTV_Quick_ArsScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
 
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-			return getOrderInfo_host(90);
+			return getOrderInfo_host_wrapper(90);
 		}
 		else if (c == '2')//아니오
 		{
@@ -1916,7 +1916,7 @@ int ALLAT_CID_ScenarioStart(/* [in] */int state)
 		memcpy(pScenario->m_szInputTel, (*lpmt)->ani, sizeof(pScenario->m_szInputTel) - 1);//Caller ID 주문 정보 조회
 
 		setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-		return getOrderInfo_host(90);
+		return getOrderInfo_host_wrapper(90);
 
 	case 0xffff:
 		new_guide();
