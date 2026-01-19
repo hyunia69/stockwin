@@ -85,6 +85,34 @@ public:
 	SSL *m_ssl;
 	char m_szretMsg[1024 + 1];
 	char m_szretval[14 + 1];
+
+	// ========================================================================
+	// 신규 PayLetter API 관련 멤버 변수 (2026-01-19 추가)
+	// ========================================================================
+
+	// 결제 금액 관련
+	int   m_nPurchaseAmt;            // 할인 전 원가
+
+	// 쿠폰 관련
+	char  m_szCouponUseFlag[2];      // 쿠폰 사용 여부 (Y/N)
+	char  m_szCouponName[51];        // 쿠폰명
+
+	// 보너스 캐시 관련
+	char  m_szBonusCashUseFlag[2];   // 보너스 캐시 사용 여부 (Y/N)
+	int   m_nBonusCashUseAmt;        // 보너스 캐시 금액
+
+	// 구매 제한/상태 관련
+	char  m_szPurchaseLimitFlag[2];  // 구매 제한 상태 (1=정상, 2=불량, 3=횟수초과, 4=시작전, 5=종료, 6=중지)
+	char  m_szPgCode[2];             // PG 코드 (A=올앳, P=페이레터)
+	int   m_nMemberState;            // 고객상태 (1=비회원, 2=유료회원, 3=기구매자)
+	char  m_szServiceCheckFlag[2];   // 서비스 점검 여부 (Y/N)
+
+	// 회원 ID (UUID)
+	char  m_szMemberId[40];          // 회원 ID
+
+	// 신규 API 사용 플래그
+	bool  m_bUseNewAPI;              // 신규 API 사용 여부
+
 private:
 
 

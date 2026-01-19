@@ -851,7 +851,7 @@ unsigned int __stdcall Wow_InfoRodocReq_Process(void *data)
 
 int getTcpOrderInfo_host(int holdm)
 {
-	//초기화	
+	//초기화
 	((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_DBAccess = 0;
 	if (holdm != 0) {
 		if (new_guide) new_guide();
@@ -874,4 +874,415 @@ int getTcpOrderInfo_host(int holdm)
 	((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_hThread = (HANDLE)_beginthreadex(NULL, 0, Wow_InfoRodocReq_Process, (LPVOID)(*lpmt), 0, &(((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->threadID));
 
 	return(0);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//  신규 PayLetter REST API 연동 함수
+//  작성일: 2026-01-19
+//  기존 XML 기반 orderRequestApi.asp를 JSON 기반 REST API로 대체
+//////////////////////////////////////////////////////////////////////////////////////////
+
+#include "PayLetterAPI.h"
+
+// 신규 API 호출 스레드 함수
+unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
+{
+	int ch = 0;
+	int threadID;
+	LPMTP *lineTablePtr = (LPMTP *)data;
+	CALLAT_Hangung_Quick_Scenario *pScenario = (CALLAT_Hangung_Quick_Scenario *)(lineTablePtr->pScenario);
+
+	ch = lineTablePtr->chanID;
+	threadID = lineTablePtr->threadID;
+
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process START (New REST API)", ch);
+
+	// 멤버 변수 초기화
+	memset(pScenario->m_szMx_issue_no, 0x00, sizeof(pScenario->m_szMx_issue_no));
+	memset(pScenario->m_szMx_name, 0x00, sizeof(pScenario->m_szMx_name));
+	memset(pScenario->m_szMx_id, 0x00, sizeof(pScenario->m_szMx_id));
+	memset(pScenario->m_szCC_name, 0x00, sizeof(pScenario->m_szCC_name));
+	memset(pScenario->m_szCC_Prod_Desc, 0x00, sizeof(pScenario->m_szCC_Prod_Desc));
+	memset(pScenario->m_szpsrtner_nm, 0x00, sizeof(pScenario->m_szpsrtner_nm));
+	memset(pScenario->m_szCC_Prod_Code, 0x00, sizeof(pScenario->m_szCC_Prod_Code));
+	memset(pScenario->m_szPhone_no, 0x00, sizeof(pScenario->m_szPhone_no));
+	memset(pScenario->m_szMx_opt, 0x00, sizeof(pScenario->m_szMx_opt));
+	memset(pScenario->m_szCC_email, 0x00, sizeof(pScenario->m_szCC_email));
+	memset(pScenario->m_sz_Shop_Pw, 0x00, sizeof(pScenario->m_sz_Shop_Pw));
+	pScenario->m_nAmount = 0;
+	memset(pScenario->m_szInstallment, 0x00, sizeof(pScenario->m_szInstallment));
+	memset(pScenario->m_szURL_YN, 0x00, sizeof(pScenario->m_szURL_YN));
+	memset(pScenario->m_szSHOP_RET_URL, 0x00, sizeof(pScenario->m_szSHOP_RET_URL));
+
+	// 신규 멤버 변수 초기화
+	pScenario->m_nPurchaseAmt = 0;
+	memset(pScenario->m_szCouponUseFlag, 0x00, sizeof(pScenario->m_szCouponUseFlag));
+	memset(pScenario->m_szCouponName, 0x00, sizeof(pScenario->m_szCouponName));
+	memset(pScenario->m_szBonusCashUseFlag, 0x00, sizeof(pScenario->m_szBonusCashUseFlag));
+	pScenario->m_nBonusCashUseAmt = 0;
+	memset(pScenario->m_szPurchaseLimitFlag, 0x00, sizeof(pScenario->m_szPurchaseLimitFlag));
+	memset(pScenario->m_szPgCode, 0x00, sizeof(pScenario->m_szPgCode));
+	pScenario->m_nMemberState = 0;
+	memset(pScenario->m_szServiceCheckFlag, 0x00, sizeof(pScenario->m_szServiceCheckFlag));
+	memset(pScenario->m_szMemberId, 0x00, sizeof(pScenario->m_szMemberId));
+
+	// 스레드 유효성 검사
+	if (threadID != lineTablePtr->threadID) {
+		pScenario->m_bDnisInfo = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process the line service is not valid any more.", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return -1;
+	}
+
+	// 기존 인터넷 핸들 정리
+	BOOL bRet = 0;
+	if (pScenario->m_hObject != NULL) {
+		bRet = InternetCloseHandle(pScenario->m_hObject);
+		pScenario->m_hObject = NULL;
+	}
+	if (pScenario->m_hConnect != NULL) {
+		bRet = InternetCloseHandle(pScenario->m_hConnect);
+		pScenario->m_hConnect = NULL;
+	}
+	if (pScenario->m_hSession != NULL) {
+		bRet = InternetCloseHandle(pScenario->m_hSession);
+		pScenario->m_hSession = NULL;
+	}
+
+#if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
+	CoInitializeEx(NULL, COINIT_MULTITHREADED);
+#else
+	CoInitialize(NULL);
+#endif
+
+	// PayLetter API 호출
+	PL_PaymentInfo plInfo;
+	std::string dnis(pScenario->szDnis);
+	std::string phoneNo(pScenario->m_szInputTel);
+
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, PhoneNo=%s", ch, dnis.c_str(), phoneNo.c_str());
+
+	// reqType=1 (회선번호), arsType="VARS" (보는ARS)
+	if (!PL_GetPaymentInfo(1, dnis, phoneNo, "VARS", plInfo)) {
+		// API 호출 실패
+		std::string errMsg = PL_GetLastError();
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 호출 실패 - %s", ch, errMsg.c_str());
+		pScenario->m_bDnisInfo = -1;
+
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API call failed", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return -1;
+	}
+
+	// 결과 코드 확인
+	if (plInfo.resultCode != "0") {
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: API 응답 오류 - resultCode=%s",
+				ch, plInfo.resultCode.c_str());
+		pScenario->m_bDnisInfo = 0;
+
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process API response error", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return 0;
+	}
+
+	// 구매 제한 확인
+	if (plInfo.purchaseLimitFlag != "1") {
+		std::string limitMsg = PL_GetPurchaseLimitMessage(plInfo.purchaseLimitFlag);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 구매 제한 - %s (flag=%s)",
+				ch, limitMsg.c_str(), plInfo.purchaseLimitFlag.c_str());
+		pScenario->m_bDnisInfo = 0;
+
+		// 구매 제한 플래그 저장
+		strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),
+				  plInfo.purchaseLimitFlag.c_str(), sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
+
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process purchase limit", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return 0;
+	}
+
+	// 서비스 점검 확인
+	if (plInfo.serviceCheckFlag == "Y") {
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 서비스 점검 중 - 완료 예정: %s",
+				ch, plInfo.checkCompleteTime.c_str());
+		pScenario->m_bDnisInfo = 0;
+
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process service maintenance", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return 0;
+	}
+
+	// 결제 금액 검증
+	if (plInfo.payAmt < 1) {
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: 결제 금액 없음 - payAmt=%d", ch, plInfo.payAmt);
+		pScenario->m_bDnisInfo = 0;
+
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process invalid payment amount", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return 0;
+	}
+
+	// ========================================================================
+	// 응답 데이터를 시나리오 멤버 변수에 저장
+	// 필드 매핑 (XML → JSON):
+	//   order_no → orderNo (m_szMx_issue_no)
+	//   shop_id → mallIdGeneral (m_szMx_id) - 일반결제용
+	//   cc_name → memberId (m_szCC_name)
+	//   cc_pord_desc → itemName (m_szCC_Prod_Desc)
+	//   partner_nm → nickName (m_szpsrtner_nm)
+	//   cc_pord_code → categoryId_2nd (m_szCC_Prod_Code)
+	//   amount → payAmt (m_nAmount)
+	// ========================================================================
+
+	// 주문번호 (Int64 → String)
+	char szOrderNo[80] = { 0 };
+	sprintf_s(szOrderNo, sizeof(szOrderNo), "%lld", plInfo.orderNo);
+	strncpy_s(pScenario->m_szMx_issue_no, sizeof(pScenario->m_szMx_issue_no),
+			  szOrderNo, sizeof(pScenario->m_szMx_issue_no) - 1);
+
+	// 가맹점 아이디 (일반결제: mallIdGeneral)
+	strncpy_s(pScenario->m_szMx_id, sizeof(pScenario->m_szMx_id),
+			  plInfo.mallIdGeneral.c_str(), sizeof(pScenario->m_szMx_id) - 1);
+
+	// 회원ID (memberId → cc_name 대체)
+	strncpy_s(pScenario->m_szCC_name, sizeof(pScenario->m_szCC_name),
+			  plInfo.memberId.c_str(), sizeof(pScenario->m_szCC_name) - 1);
+
+	// 상품명
+	strncpy_s(pScenario->m_szCC_Prod_Desc, sizeof(pScenario->m_szCC_Prod_Desc),
+			  plInfo.itemName.c_str(), sizeof(pScenario->m_szCC_Prod_Desc) - 1);
+
+	// 필명 (nickName → partner_nm 대체, TTS 안내용)
+	strncpy_s(pScenario->m_szpsrtner_nm, sizeof(pScenario->m_szpsrtner_nm),
+			  plInfo.nickName.c_str(), sizeof(pScenario->m_szpsrtner_nm) - 1);
+
+	// 상품코드 (categoryId_2nd 사용)
+	strncpy_s(pScenario->m_szCC_Prod_Code, sizeof(pScenario->m_szCC_Prod_Code),
+			  plInfo.categoryId_2nd.c_str(), sizeof(pScenario->m_szCC_Prod_Code) - 1);
+
+	// 결제금액
+	pScenario->m_nAmount = plInfo.payAmt;
+
+	// 회원ID (UUID) 별도 저장
+	strncpy_s(pScenario->m_szMemberId, sizeof(pScenario->m_szMemberId),
+			  plInfo.memberId.c_str(), sizeof(pScenario->m_szMemberId) - 1);
+
+	// ========================================================================
+	// 신규 필드 저장
+	// ========================================================================
+
+	// 원가 (할인 전)
+	pScenario->m_nPurchaseAmt = plInfo.purchaseAmt;
+
+	// 쿠폰 정보
+	strncpy_s(pScenario->m_szCouponUseFlag, sizeof(pScenario->m_szCouponUseFlag),
+			  plInfo.couponUseFlag.c_str(), sizeof(pScenario->m_szCouponUseFlag) - 1);
+	strncpy_s(pScenario->m_szCouponName, sizeof(pScenario->m_szCouponName),
+			  plInfo.couponName.c_str(), sizeof(pScenario->m_szCouponName) - 1);
+
+	// 보너스 캐시 정보
+	strncpy_s(pScenario->m_szBonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag),
+			  plInfo.bonusCashUseFlag.c_str(), sizeof(pScenario->m_szBonusCashUseFlag) - 1);
+	pScenario->m_nBonusCashUseAmt = plInfo.bonusCashUseAmt;
+
+	// 구매 제한/상태 정보
+	strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),
+			  plInfo.purchaseLimitFlag.c_str(), sizeof(pScenario->m_szPurchaseLimitFlag) - 1);
+	strncpy_s(pScenario->m_szPgCode, sizeof(pScenario->m_szPgCode),
+			  plInfo.pgCode.c_str(), sizeof(pScenario->m_szPgCode) - 1);
+	pScenario->m_nMemberState = plInfo.memberState;
+	strncpy_s(pScenario->m_szServiceCheckFlag, sizeof(pScenario->m_szServiceCheckFlag),
+			  plInfo.serviceCheckFlag.c_str(), sizeof(pScenario->m_szServiceCheckFlag) - 1);
+
+	// Notification URL (일반결제)
+	strncpy_s(pScenario->m_szSHOP_RET_URL, sizeof(pScenario->m_szSHOP_RET_URL),
+			  plInfo.notiUrlGeneral.c_str(), sizeof(pScenario->m_szSHOP_RET_URL) - 1);
+	if (strlen(pScenario->m_szSHOP_RET_URL) > 0) {
+		strncpy_s(pScenario->m_szURL_YN, sizeof(pScenario->m_szURL_YN), "Y", 1);
+	}
+
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: 데이터 저장 완료", ch);
+	xprintf("[CH:%03d]   주문번호: %s", ch, pScenario->m_szMx_issue_no);
+	xprintf("[CH:%03d]   가맹점ID: %s", ch, pScenario->m_szMx_id);
+	xprintf("[CH:%03d]   회원ID: %s", ch, pScenario->m_szCC_name);
+	xprintf("[CH:%03d]   상품명: %s", ch, pScenario->m_szCC_Prod_Desc);
+	xprintf("[CH:%03d]   필명: %s", ch, pScenario->m_szpsrtner_nm);
+	xprintf("[CH:%03d]   결제금액: %d", ch, pScenario->m_nAmount);
+	xprintf("[CH:%03d]   원가: %d", ch, pScenario->m_nPurchaseAmt);
+	xprintf("[CH:%03d]   쿠폰사용: %s (%s)", ch, pScenario->m_szCouponUseFlag, pScenario->m_szCouponName);
+	xprintf("[CH:%03d]   보너스캐시사용: %s (%d원)", ch, pScenario->m_szBonusCashUseFlag, pScenario->m_nBonusCashUseAmt);
+
+	// ========================================================================
+	// DB 저장 (기존 로직 유지 - sp_getAllatOrderInfoByOrderNo 호출)
+	// ========================================================================
+
+	char szDATABASE_IP_URL[50 + 1];
+	char szDATABASE[50 + 1];
+	char szSID[50 + 1];
+	char szPASSWORD[50 + 1];
+
+	GetPrivateProfileString(DATABASE_SESSION, "DATABASE_IP_URL", DATABASE_IP_URL, szDATABASE_IP_URL, sizeof(szDATABASE_IP_URL), PARAINI);
+	GetPrivateProfileString(DATABASE_SESSION, "DATABASE", DATABASE, szDATABASE, sizeof(szDATABASE), PARAINI);
+	GetPrivateProfileString(DATABASE_SESSION, "SID", SID, szSID, sizeof(szSID), PARAINI);
+	GetPrivateProfileString(DATABASE_SESSION, "PASSWORD", PASSWORD, szPASSWORD, sizeof(szPASSWORD), PARAINI);
+
+	CoInitialize(0);
+	pScenario->m_AdoDb = new CADODB(pScenario);
+	if (pScenario->m_AdoDb == NULL) {
+		pScenario->m_DBAccess = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process > DB Object is Null.", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+		_endthreadex((unsigned int)pScenario->m_hThread);
+		return 0;
+	}
+
+	if (pScenario->m_AdoDb->DBConnect(szPASSWORD, szSID, szDATABASE, szDATABASE_IP_URL) == NULL) {
+		pScenario->m_DBAccess = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
+		Wow_REQ_Quithostio("PL_InfoOrderReq_Process > DBConnect Error", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+		_endthreadex((unsigned int)pScenario->m_hThread);
+		return 0;
+	}
+
+	// 주문 정보 DB에 저장 (RegOrderInfo_NewAPI 함수 필요)
+	INFOPRODOCREQ stuReq_Body;
+	memset(&stuReq_Body, 0x00, sizeof(INFOPRODOCREQ));
+	sprintf_s(stuReq_Body.m_szDNIS, sizeof(stuReq_Body.m_szDNIS), "%s", pScenario->szDnis);
+	// 휴대폰번호는 개인정보 보호를 위해 저장하지 않음
+	memset(stuReq_Body.m_szHP_NO, 0x00, sizeof(stuReq_Body.m_szHP_NO));
+
+	INFOPRODOCRES stu_InfoProdocRes;
+	memset(&stu_InfoProdocRes, 0x00, sizeof(INFOPRODOCRES));
+	strncpy_s(stu_InfoProdocRes.m_szorder_no, sizeof(stu_InfoProdocRes.m_szorder_no),
+			  pScenario->m_szMx_issue_no, sizeof(stu_InfoProdocRes.m_szorder_no) - 1);
+	strncpy_s(stu_InfoProdocRes.m_szshop_id, sizeof(stu_InfoProdocRes.m_szshop_id),
+			  pScenario->m_szMx_id, sizeof(stu_InfoProdocRes.m_szshop_id) - 1);
+	strncpy_s(stu_InfoProdocRes.m_szcc_name, sizeof(stu_InfoProdocRes.m_szcc_name),
+			  pScenario->m_szCC_name, sizeof(stu_InfoProdocRes.m_szcc_name) - 1);
+	strncpy_s(stu_InfoProdocRes.m_szcc_pord_desc, sizeof(stu_InfoProdocRes.m_szcc_pord_desc),
+			  pScenario->m_szCC_Prod_Desc, sizeof(stu_InfoProdocRes.m_szcc_pord_desc) - 1);
+	strncpy_s(stu_InfoProdocRes.m_szpartner_nm, sizeof(stu_InfoProdocRes.m_szpartner_nm),
+			  pScenario->m_szpsrtner_nm, sizeof(stu_InfoProdocRes.m_szpartner_nm) - 1);
+	strncpy_s(stu_InfoProdocRes.m_szcc_pord_code, sizeof(stu_InfoProdocRes.m_szcc_pord_code),
+			  pScenario->m_szCC_Prod_Code, sizeof(stu_InfoProdocRes.m_szcc_pord_code) - 1);
+	sprintf_s(stu_InfoProdocRes.m_szamount, sizeof(stu_InfoProdocRes.m_szamount), "%d", pScenario->m_nAmount);
+
+	bRet = pScenario->m_AdoDb->RegOrderInfo(stuReq_Body, stu_InfoProdocRes);
+
+	if (bRet == TRUE) {
+		// DB 조회로 추가 정보 획득 (MX_OPT 등)
+		if (pScenario->m_AdoDb->sp_getAllatOrderInfoByOrderNo(stuReq_Body.m_szDNIS, stu_InfoProdocRes.m_szorder_no)) {
+			_variant_t bt = "";
+			char szAmount[12 + 1];
+			int iROWCOUNT = pScenario->m_AdoDb->GetRecCount();
+
+			if (iROWCOUNT > 0) {
+				pScenario->m_AdoDb->GetRs(_variant_t(L"MX_OPT"), bt);
+				strncpy_s(pScenario->m_szMx_opt, sizeof(pScenario->m_szMx_opt),
+						  (char*)(_bstr_t)bt, sizeof(pScenario->m_szMx_opt) - 1);
+
+				pScenario->m_AdoDb->GetRs(_variant_t(L"MX_NAME"), bt);
+				strncpy_s(pScenario->m_szMx_name, sizeof(pScenario->m_szMx_name),
+						  (char*)(_bstr_t)bt, sizeof(pScenario->m_szMx_name) - 1);
+
+				pScenario->m_AdoDb->GetRs(_variant_t(L"CC_EMAIL"), bt);
+				strncpy_s(pScenario->m_szCC_email, sizeof(pScenario->m_szCC_email),
+						  (char*)(_bstr_t)bt, sizeof(pScenario->m_szCC_email) - 1);
+
+				xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 추가 정보 획득 완료", ch);
+				xprintf("[CH:%03d]   MX_OPT: %s", ch, pScenario->m_szMx_opt);
+				xprintf("[CH:%03d]   MX_NAME: %s", ch, pScenario->m_szMx_name);
+			}
+			pScenario->m_AdoDb->RSClose();
+		}
+
+		pScenario->m_bDnisInfo = 1; // 성공
+	}
+	else {
+		pScenario->m_bDnisInfo = 0;
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 저장 실패", ch);
+	}
+
+	Wow_REQ_Quithostio("PL_InfoOrderReq_Process SUCCESS", ch);
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+
+	_endthreadex((unsigned int)(*port)[ch].m_hThread);
+	return 0;
+}
+
+// 신규 API 호출 Host 함수
+int getOrderInfo_NewAPI_host(int holdm)
+{
+	// 초기화
+	((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_DBAccess = 0;
+	if (holdm != 0) {
+		if (new_guide) new_guide();
+		(*lpmt)->trials = 0;
+		(*lpmt)->Hmusic = HM_LOOP;
+		if (set_guide) set_guide(holdm);
+		if (send_guide) send_guide(NODTMF);
+	}
+
+	if (((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_AdoDb != NULL) {
+		((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_DBAccess = -1;
+		(*port)[(*lpmt)->chanID].ppftbl[POST_NET].postcode = HI_OK;
+		Wow_REQ_Quithostio("getOrderInfo_NewAPI_host line service is Load Error", (*lpmt)->chanID);
+		return 0;
+	}
+
+	(*lpmt)->ppftbl[POST_NET].postcode = HI_NCMPLT;
+
+	((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->m_hThread =
+		(HANDLE)_beginthreadex(NULL, 0, PL_InfoOrderReq_Process, (LPVOID)(*lpmt), 0,
+			&(((CALLAT_Hangung_Quick_Scenario *)((*lpmt)->pScenario))->threadID));
+
+	return 0;
+}
+
+// TTS 안내 문구 생성 함수
+// 쿠폰/보너스캐시 적용 정보를 포함한 동적 TTS 생성
+CString GeneratePaymentTTS(CALLAT_Hangung_Quick_Scenario *pScenario)
+{
+	CString tts;
+
+	// 고객명(필명) + 상품명
+	tts.Format("%s 고객님, 주문하신 %s의 ",
+			   pScenario->m_szpsrtner_nm, pScenario->m_szCC_Prod_Desc);
+
+	// 할인 정보가 있는 경우
+	BOOL bHasCoupon = (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0);
+	BOOL bHasBonus = (strcmp(pScenario->m_szBonusCashUseFlag, "Y") == 0);
+
+	if (bHasCoupon || bHasBonus) {
+		CString discount;
+		discount.Format("%s께서 보유하신 ", pScenario->m_szpsrtner_nm);
+		tts += discount;
+
+		if (bHasCoupon) {
+			CString coupon;
+			coupon.Format("%s 쿠폰", pScenario->m_szCouponName);
+			tts += coupon;
+			if (bHasBonus) {
+				tts += "과 ";
+			}
+		}
+
+		if (bHasBonus) {
+			CString bonus;
+			bonus.Format("보너스 캐시 %d원", pScenario->m_nBonusCashUseAmt);
+			tts += bonus;
+		}
+		tts += "이 적용되어 ";
+	}
+
+	// 최종 결제 금액
+	CString amount;
+	amount.Format("최종 결제 금액은 %d원입니다.", pScenario->m_nAmount);
+	tts += amount;
+
+	return tts;
 }
