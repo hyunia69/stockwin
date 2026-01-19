@@ -664,10 +664,22 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
 
         if (strcmp(outInfo->resultCode, "0") == 0) {
             // data 객체 내의 필드들 파싱
+            // 한글 필드용 임시 버퍼 (UTF-8 → EUC-KR 변환용)
+            char tempUtf8[512];
+
             PL_JsonGetString(response, "memberId", outInfo->memberId, sizeof(outInfo->memberId));
             outInfo->orderNo = PL_JsonGetInt64(response, "orderNo");
-            PL_JsonGetString(response, "nickName", outInfo->nickName, sizeof(outInfo->nickName));
-            PL_JsonGetString(response, "itemName", outInfo->itemName, sizeof(outInfo->itemName));
+
+            // nickName (한글 가능) - UTF-8 → EUC-KR 변환
+            memset(tempUtf8, 0, sizeof(tempUtf8));
+            PL_JsonGetString(response, "nickName", tempUtf8, sizeof(tempUtf8));
+            PL_ConvertUtf8ToEucKr(tempUtf8, outInfo->nickName, sizeof(outInfo->nickName));
+
+            // itemName (한글) - UTF-8 → EUC-KR 변환
+            memset(tempUtf8, 0, sizeof(tempUtf8));
+            PL_JsonGetString(response, "itemName", tempUtf8, sizeof(tempUtf8));
+            PL_ConvertUtf8ToEucKr(tempUtf8, outInfo->itemName, sizeof(outInfo->itemName));
+
             PL_JsonGetString(response, "pgCode", outInfo->pgCode, sizeof(outInfo->pgCode));
             PL_JsonGetString(response, "categoryId_2nd", outInfo->categoryId_2nd, sizeof(outInfo->categoryId_2nd));
             PL_JsonGetString(response, "merchantId", outInfo->merchantId, sizeof(outInfo->merchantId));
@@ -676,10 +688,20 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
             outInfo->payAmt = PL_JsonGetInt(response, "payAmt");
             outInfo->purchaseAmt = PL_JsonGetInt(response, "purchaseAmt");
             PL_JsonGetString(response, "CouponUseFlag", outInfo->couponUseFlag, sizeof(outInfo->couponUseFlag));
-            PL_JsonGetString(response, "CouponName", outInfo->couponName, sizeof(outInfo->couponName));
+
+            // CouponName (한글 가능) - UTF-8 → EUC-KR 변환
+            memset(tempUtf8, 0, sizeof(tempUtf8));
+            PL_JsonGetString(response, "CouponName", tempUtf8, sizeof(tempUtf8));
+            PL_ConvertUtf8ToEucKr(tempUtf8, outInfo->couponName, sizeof(outInfo->couponName));
+
             PL_JsonGetString(response, "BonusCashUseFlag", outInfo->bonusCashUseFlag, sizeof(outInfo->bonusCashUseFlag));
             outInfo->bonusCashUseAmt = PL_JsonGetInt(response, "BonusCashUseAmt");
-            PL_JsonGetString(response, "cardCompany", outInfo->cardCompany, sizeof(outInfo->cardCompany));
+
+            // cardCompany (한글 가능) - UTF-8 → EUC-KR 변환
+            memset(tempUtf8, 0, sizeof(tempUtf8));
+            PL_JsonGetString(response, "cardCompany", tempUtf8, sizeof(tempUtf8));
+            PL_ConvertUtf8ToEucKr(tempUtf8, outInfo->cardCompany, sizeof(outInfo->cardCompany));
+
             PL_JsonGetString(response, "purchaseLimitFlag", outInfo->purchaseLimitFlag, sizeof(outInfo->purchaseLimitFlag));
             PL_JsonGetString(response, "payAgreeFlag", outInfo->payAgreeFlag, sizeof(outInfo->payAgreeFlag));
             outInfo->memberState = PL_JsonGetInt(response, "memberState");
@@ -861,4 +883,63 @@ void PL_Log(const char* format, ...)
     va_end(args);
 
     eprintf("[PayLetterAPI] %s", buffer);
+}
+
+// ============================================================================
+// UTF-8 → EUC-KR(CP949) 변환
+// ============================================================================
+
+int PL_ConvertUtf8ToEucKr(const char* utf8Str, char* outEucKr, int outEucKrSize)
+{
+    wchar_t* wideStr = NULL;
+    int wideLen = 0;
+    int eucKrLen = 0;
+
+    if (utf8Str == NULL || outEucKr == NULL || outEucKrSize <= 0) {
+        return 0;
+    }
+
+    outEucKr[0] = '\0';
+
+    // 빈 문자열 처리
+    if (utf8Str[0] == '\0') {
+        return 1;
+    }
+
+    // 1단계: UTF-8 → UTF-16 (Wide Character)
+    wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8Str, -1, NULL, 0);
+    if (wideLen <= 0) {
+        // 변환 실패 시 원본 복사
+        strncpy_s(outEucKr, outEucKrSize, utf8Str, _TRUNCATE);
+        return 0;
+    }
+
+    wideStr = (wchar_t*)malloc(wideLen * sizeof(wchar_t));
+    if (wideStr == NULL) {
+        strncpy_s(outEucKr, outEucKrSize, utf8Str, _TRUNCATE);
+        return 0;
+    }
+
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8Str, -1, wideStr, wideLen) <= 0) {
+        free(wideStr);
+        strncpy_s(outEucKr, outEucKrSize, utf8Str, _TRUNCATE);
+        return 0;
+    }
+
+    // 2단계: UTF-16 → EUC-KR (CP949)
+    eucKrLen = WideCharToMultiByte(949, 0, wideStr, -1, NULL, 0, NULL, NULL);
+    if (eucKrLen <= 0 || eucKrLen > outEucKrSize) {
+        free(wideStr);
+        strncpy_s(outEucKr, outEucKrSize, utf8Str, _TRUNCATE);
+        return 0;
+    }
+
+    if (WideCharToMultiByte(949, 0, wideStr, -1, outEucKr, outEucKrSize, NULL, NULL) <= 0) {
+        free(wideStr);
+        strncpy_s(outEucKr, outEucKrSize, utf8Str, _TRUNCATE);
+        return 0;
+    }
+
+    free(wideStr);
+    return 1;
 }

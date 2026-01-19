@@ -307,7 +307,7 @@ int CALLAT_Stockwin_Quick_Scenario::ALLAT_getOrderInfo() {
     PL_PaymentInfo info;
 
     // REST API 호출
-    if (!PL_GetPaymentInfo(1, m_dnis, m_phoneNo, "VARS", info)) {
+    if (!PL_GetPaymentInfo(1, m_dnis, m_phoneNo, "ARS", info)) {
         info_printf("API 호출 실패: %s", PL_GetLastError().c_str());
         return -1;
     }

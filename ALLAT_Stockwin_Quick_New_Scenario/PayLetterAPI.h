@@ -42,6 +42,9 @@
 // API 응답 구조체
 // ============================================================================
 
+// 구조체 정렬을 명시적으로 8바이트로 지정 (컴파일 단위 간 일관성 보장)
+#pragma pack(push, 8)
+
 typedef struct _PL_PaymentInfo {
     char memberId[PL_MAX_MEMBER_ID + 1];           // 회원 ID (UUID)
     __int64 orderNo;                                // 주문번호
@@ -86,6 +89,8 @@ typedef struct _PL_Config {
     int timeout;                                    // 타임아웃 (초)
     int useLegacyFallback;                          // 레거시 API 폴백 사용 여부 (0/1)
 } PL_Config;
+
+#pragma pack(pop)  // 구조체 정렬 복원
 
 // 전역 설정
 extern PL_Config g_plConfig;
@@ -259,5 +264,13 @@ void PL_NormalizePhoneNo(const char* phoneNo, char* outNormalized, int outNormal
 
 // 로깅 함수 (외부 printf 연결)
 void PL_Log(const char* format, ...);
+
+// UTF-8 → EUC-KR(CP949) 변환
+// API 응답은 UTF-8이지만, Windows 콘솔/로그는 EUC-KR 사용
+// @param utf8Str UTF-8 인코딩 문자열
+// @param outEucKr 출력 버퍼 (EUC-KR)
+// @param outEucKrSize 출력 버퍼 크기
+// @return 성공 여부 (1=성공, 0=실패)
+int PL_ConvertUtf8ToEucKr(const char* utf8Str, char* outEucKr, int outEucKrSize);
 
 #endif // _PAYLETTER_API_H_

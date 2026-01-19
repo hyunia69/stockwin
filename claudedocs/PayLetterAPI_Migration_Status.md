@@ -139,11 +139,11 @@ static char g_lastError[PL_MAX_ERROR_MSG + 1];
 // Before
 std::string dnis(pScenario->szDnis);
 std::string phoneNo(pScenario->m_szInputTel);
-PL_GetPaymentInfo(1, dnis, phoneNo, "VARS", plInfo);
+PL_GetPaymentInfo(1, dnis, phoneNo, "ARS", plInfo);
 std::string errMsg = PL_GetLastError();
 
 // After
-PL_GetPaymentInfo(1, pScenario->szDnis, pScenario->m_szInputTel, "VARS", &plInfo);
+PL_GetPaymentInfo(1, pScenario->szDnis, pScenario->m_szInputTel, "ARS", &plInfo);
 char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
 PL_GetLastError(errMsg, sizeof(errMsg));
 ```

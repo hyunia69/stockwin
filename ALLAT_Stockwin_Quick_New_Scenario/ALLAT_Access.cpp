@@ -69,7 +69,7 @@ extern int(*atox)(char *s);
 #define	MSG_INBOUND_LINE	WM_USER + 03
 #define	MSG_ASR_LINE	    WM_USER + 04
 
-#define	PARAINI		".\\AllatWowTvQuickPay_para.ini"
+#define	PARAINI		".\\Allat_Stockwin_Quick_New_para.ini"
 #define MAXCHAN 	240		// 최대 회선 수
 //#define MAXCHAN 	120		// 최대 회선 수
 

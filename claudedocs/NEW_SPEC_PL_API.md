@@ -222,7 +222,7 @@ POST /v1/payment/simple/getpaymentinfo_V2
 | `reqType` | Byte | O | 요청타입: 1=회선번호, 2=상품코드, 3=종목알파고용 |
 | `reqTypeVal` | String(12) | O | 요청데이터 (회선번호 또는 상품코드) |
 | `phoneNo` | String(16) | O | 휴대폰번호 (하이픈 제외) |
-| `ARSType` | String(1) | O | ARS구분: `VARS`=보는ARS, `ARS`=듣는ARS |
+| `ARSType` | String(4) | O | ARS구분: `ARS`=음성ARS (본 시나리오는 ARS만 사용) |
 
 **Request 예시**
 ```json
@@ -230,7 +230,7 @@ POST /v1/payment/simple/getpaymentinfo_V2
   "reqType": 1,
   "reqTypeVal": "1234",
   "phoneNo": "01011112222",
-  "ARSType": "VARS"
+  "ARSType": "ARS"
 }
 ```
 

@@ -129,7 +129,7 @@ void DetailErrorMessage(int ch, CException* ex, char *strFile, char *strFunc, DW
 #define	MSG_INBOUND_LINE	WM_USER + 03
 #define	MSG_ASR_LINE	    WM_USER + 04
 
-#define	PARAINI		".\\AllatWowTvQuickPay_para.ini"
+#define	PARAINI		".\\Allat_Stockwin_Quick_New_para.ini"
 #define MAXCHAN 	240		// 최대 회선 수
 //#define MAXCHAN 	120		// 최대 회선 수
 
@@ -960,12 +960,20 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// PayLetter API 호출
 	PL_PaymentInfo plInfo;
+	char szReqTypeVal[32] = { 0 };  // DNIS 변환용 버퍼
 	PL_InitPaymentInfo(&plInfo);
 
-	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, PhoneNo=%s", ch, pScenario->szDnis, pScenario->m_szInputTel);
+	// DNIS 6690인 경우 앞에 "023490" 추가 (0234906690 형식)
+	if (strcmp(pScenario->szDnis, "6690") == 0) {
+		sprintf_s(szReqTypeVal, sizeof(szReqTypeVal), "023490%s", pScenario->szDnis);
+	} else {
+		strncpy_s(szReqTypeVal, sizeof(szReqTypeVal), pScenario->szDnis, _TRUNCATE);
+	}
 
-	// reqType=1 (회선번호), arsType="VARS" (보는ARS)
-	if (!PL_GetPaymentInfo(1, pScenario->szDnis, pScenario->m_szInputTel, "VARS", &plInfo)) {
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DNIS=%s, ReqTypeVal=%s, PhoneNo=%s", ch, pScenario->szDnis, szReqTypeVal, pScenario->m_szInputTel);
+
+	// reqType=1 (회선번호), arsType="ARS" (음성ARS)
+	if (!PL_GetPaymentInfo(1, szReqTypeVal, pScenario->m_szInputTel, "ARS", &plInfo)) {
 		// API 호출 실패 - 에러 처리 (폴백 없음)
 		char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
 		PL_GetLastError(errMsg, sizeof(errMsg));
@@ -1134,12 +1142,19 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	char szSID[50 + 1];
 	char szPASSWORD[50 + 1];
 
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 작업 시작...", ch);
+
 	GetPrivateProfileString(DATABASE_SESSION, "DATABASE_IP_URL", DATABASE_IP_URL, szDATABASE_IP_URL, sizeof(szDATABASE_IP_URL), PARAINI);
 	GetPrivateProfileString(DATABASE_SESSION, "DATABASE", DATABASE, szDATABASE, sizeof(szDATABASE), PARAINI);
 	GetPrivateProfileString(DATABASE_SESSION, "SID", SID, szSID, sizeof(szSID), PARAINI);
 	GetPrivateProfileString(DATABASE_SESSION, "PASSWORD", PASSWORD, szPASSWORD, sizeof(szPASSWORD), PARAINI);
 
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 설정 - IP=%s, DB=%s", ch, szDATABASE_IP_URL, szDATABASE);
+
+	// 주의: CoInitialize는 스레드 시작 시 이미 호출됨 (960줄 근처)
+	// 중복 호출 시 S_FALSE 반환되나 문제없음
 	CoInitialize(0);
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: CADODB 객체 생성 중...", ch);
 	pScenario->m_AdoDb = new CADODB(pScenario);
 	if (pScenario->m_AdoDb == NULL) {
 		pScenario->m_DBAccess = -1;
@@ -1150,16 +1165,18 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 		return 0;
 	}
 
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 연결 시도...", ch);
 	if (pScenario->m_AdoDb->DBConnect(szPASSWORD, szSID, szDATABASE, szDATABASE_IP_URL) == NULL) {
 		pScenario->m_DBAccess = -1;
 		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
 		Wow_REQ_Quithostio("PL_InfoOrderReq_Process > DBConnect Error", ch);
-		xprintf("[CH:%03d] PL_InfoOrderReq_Process END", ch);
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process END (DBConnect failed)", ch);
 		_endthreadex((unsigned int)pScenario->m_hThread);
 		return 0;
 	}
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: DB 연결 성공", ch);
 
-	// 주문 정보 DB에 저장 (RegOrderInfo_NewAPI 함수 필요)
+	// 주문 정보 DB에 저장
 	INFOPRODOCREQ stuReq_Body;
 	memset(&stuReq_Body, 0x00, sizeof(INFOPRODOCREQ));
 	sprintf_s(stuReq_Body.m_szDNIS, sizeof(stuReq_Body.m_szDNIS), "%s", pScenario->szDnis);
@@ -1182,10 +1199,13 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 			  pScenario->m_szCC_Prod_Code, sizeof(stu_InfoProdocRes.m_szcc_pord_code) - 1);
 	sprintf_s(stu_InfoProdocRes.m_szamount, sizeof(stu_InfoProdocRes.m_szamount), "%d", pScenario->m_nAmount);
 
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: RegOrderInfo 호출 시작...", ch);
 	bRet = pScenario->m_AdoDb->RegOrderInfo(stuReq_Body, stu_InfoProdocRes);
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: RegOrderInfo 결과=%d", ch, bRet);
 
 	if (bRet == TRUE) {
 		// DB 조회로 추가 정보 획득 (MX_OPT 등)
+		xprintf("[CH:%03d] PL_InfoOrderReq_Process: sp_getAllatOrderInfoByOrderNo 호출...", ch);
 		if (pScenario->m_AdoDb->sp_getAllatOrderInfoByOrderNo(stuReq_Body.m_szDNIS, stu_InfoProdocRes.m_szorder_no)) {
 			_variant_t bt = "";
 			char szAmount[12 + 1];
