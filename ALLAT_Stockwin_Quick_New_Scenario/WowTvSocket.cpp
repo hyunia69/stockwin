@@ -965,7 +965,8 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 
 	// DNIS 6690인 경우 앞에 "023490" 추가 (0234906690 형식)
 	if (strcmp(pScenario->szDnis, "6690") == 0) {
-		sprintf_s(szReqTypeVal, sizeof(szReqTypeVal), "023490%s", pScenario->szDnis);
+		// sprintf_s(szReqTypeVal, sizeof(szReqTypeVal), "023490%s", pScenario->szDnis);
+		sprintf_s(szReqTypeVal, sizeof(szReqTypeVal), "%s", pScenario->szDnis);
 	} else {
 		strncpy_s(szReqTypeVal, sizeof(szReqTypeVal), pScenario->szDnis, _TRUNCATE);
 	}
