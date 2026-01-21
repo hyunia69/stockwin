@@ -81,7 +81,8 @@ extern int(*atox)(char *s);
 
 #define DATABASE_SESSION "DATABASE"
 //#define DATABASE_IP_URL "arsdb.mediaford.co.kr,1433"
-#define DATABASE_IP_URL "211.196.157.119,1433"
+//#define DATABASE_IP_URL "211.196.157.119,1433"  // 구서버
+#define DATABASE_IP_URL "211.196.157.121,1433"    // 신서버 (2026-01-21 변경)
 #define DATABASE  "arspg_web"
 #define SID       "sa"
 #define PASSWORD  "medi@ford"
@@ -777,7 +778,9 @@ CADODB::~CADODB()
 BOOL CADODB::DBConnect(char* pWD, char* pID, char* pDataBase, char* pConnectIP)
 {
 	char strConnectionString[1024]={0x00,};
-	strcpy_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), "Provider=SQLOLEDB.1;Password=");
+	// MSOLEDBSQL: TLS 1.2 지원 드라이버 (2026-01-21 변경)
+	// 기존: SQLOLEDB.1 (TLS 1.0만 지원하여 121번 서버 연결 실패)
+	strcpy_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), "Provider=MSOLEDBSQL;Password=");
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), pWD);
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), ";Persist Security Info=True;User ID=");
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), pID);
@@ -786,30 +789,68 @@ BOOL CADODB::DBConnect(char* pWD, char* pID, char* pDataBase, char* pConnectIP)
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), ";Data Source=");
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), pConnectIP);
 	strcat_s(strConnectionString,sizeof(strConnectionString)-strlen(strConnectionString), "; Network Library = dbmssocn");
-    
-    m_CONN.CreateInstance("ADODB.Connection");
-    m_CONN->ConnectionString = strConnectionString;
-  //HRESULT hr = m_CONN->Open(strConnectionString, "", "", -1);
-    HRESULT hr = m_CONN->Open("", "", "", -1);
 
-    if(SUCCEEDED(hr))
-    {
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
+	try
+	{
+		HRESULT hrCreate = m_CONN.CreateInstance("ADODB.Connection");
+		if (FAILED(hrCreate) || m_CONN == NULL)
+		{
+			m_pScenario != NULL ? xprintf("[CH:%03d] DBConnect: CreateInstance failed", m_pScenario->nChan) : xprintf("DBConnect: CreateInstance failed");
+			return FALSE;
+		}
+
+		m_CONN->ConnectionString = strConnectionString;
+		m_CONN->ConnectionTimeout = 15;  // 연결 타임아웃 15초
+		//HRESULT hr = m_CONN->Open(strConnectionString, "", "", -1);
+		HRESULT hr = m_CONN->Open("", "", "", -1);
+
+		if(SUCCEEDED(hr))
+		{
+			return TRUE;
+		}
+		else
+		{
+			m_pScenario != NULL ? xprintf("[CH:%03d] DBConnect: Open failed with HRESULT=0x%08lx", m_pScenario->nChan, hr) : xprintf("DBConnect: Open failed with HRESULT=0x%08lx", hr);
+			return FALSE;
+		}
+	}
+	catch (_com_error &e)
+	{
+		m_pScenario != NULL ? xprintf("[CH:%03d] DBConnect: COM exception - Code=0x%08lx, Msg=%s", m_pScenario->nChan, e.Error(), e.ErrorMessage()) : xprintf("DBConnect: COM exception - Code=0x%08lx, Msg=%s", e.Error(), e.ErrorMessage());
+		// m_CONN이 유효할 경우에만 PrintProviderError 호출
+		if (m_CONN != NULL)
+		{
+			try { PrintProviderError(); } catch (...) {}
+		}
+		return FALSE;
+	}
+	catch (...)
+	{
+		m_pScenario != NULL ? xprintf("[CH:%03d] DBConnect: Unknown exception occurred", m_pScenario->nChan) : xprintf("DBConnect: Unknown exception occurred");
+		return FALSE;
+	}
 }
 
 BOOL CADODB::ISRSCon()
 {
-    return ((m_RS->GetState() == adStateOpen ) ? TRUE : FALSE);
+    if (m_RS == NULL) return FALSE;
+    try {
+        return ((m_RS->GetState() == adStateOpen ) ? TRUE : FALSE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL CADODB::ISOpen()
 {
-    return ((m_CONN->GetState() == adStateOpen ) ? TRUE : FALSE);
+    if (m_CONN == NULL) return FALSE;
+    try {
+        return ((m_CONN->GetState() == adStateOpen ) ? TRUE : FALSE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL CADODB::GetDBCon()
@@ -821,60 +862,125 @@ void CADODB::ConClose()
 {
     if(ISOpen())
     {
-        m_CONN->Close();
+        try {
+            m_CONN->Close();
+        }
+        catch (...) {
+            m_pScenario != NULL ? xprintf("[CH:%03d] ConClose: Exception during Close", m_pScenario->nChan) : xprintf("ConClose: Exception during Close");
+        }
     }
 }
 
 long CADODB::ConBeginTrans()
 {
-    return m_CONN->BeginTrans();
+    if (m_CONN == NULL) return -1;
+    try {
+        return m_CONN->BeginTrans();
+    }
+    catch (...) {
+        m_pScenario != NULL ? xprintf("[CH:%03d] ConBeginTrans: Exception occurred", m_pScenario->nChan) : xprintf("ConBeginTrans: Exception occurred");
+        return -1;
+    }
 }
 
 void CADODB::ConCommitTrans()
 {
-    m_CONN->CommitTrans();
+    if (m_CONN == NULL) return;
+    try {
+        m_CONN->CommitTrans();
+    }
+    catch (...) {
+        m_pScenario != NULL ? xprintf("[CH:%03d] ConCommitTrans: Exception occurred", m_pScenario->nChan) : xprintf("ConCommitTrans: Exception occurred");
+    }
 }
 
 void CADODB::ConRollbackTrans()
 {
-    m_CONN->RollbackTrans();
+    if (m_CONN == NULL) return;
+    try {
+        m_CONN->RollbackTrans();
+    }
+    catch (...) {
+        m_pScenario != NULL ? xprintf("[CH:%03d] ConRollbackTrans: Exception occurred", m_pScenario->nChan) : xprintf("ConRollbackTrans: Exception occurred");
+    }
 }
 
 void CADODB::ConCancel()
 {
-    m_CONN->Cancel();
+    if (m_CONN == NULL) return;
+    try {
+        m_CONN->Cancel();
+    }
+    catch (...) {
+        m_pScenario != NULL ? xprintf("[CH:%03d] ConCancel: Exception occurred", m_pScenario->nChan) : xprintf("ConCancel: Exception occurred");
+    }
 }
 
 BOOL CADODB::IsEOF()
 {
-    return m_RS->adoEOF;
+    if (m_RS == NULL) return TRUE;  // NULL이면 EOF로 처리
+    try {
+        return m_RS->adoEOF;
+    }
+    catch (...) {
+        return TRUE;
+    }
 }
 
 
 BOOL CADODB::Next()
 {
-    return (FAILED(m_RS->MoveNext()) ? FALSE : TRUE);
+    if (m_RS == NULL) return FALSE;
+    try {
+        return (FAILED(m_RS->MoveNext()) ? FALSE : TRUE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL CADODB::Prev()
 {
-    return (FAILED(m_RS->MovePrevious()) ? FALSE : TRUE);
+    if (m_RS == NULL) return FALSE;
+    try {
+        return (FAILED(m_RS->MovePrevious()) ? FALSE : TRUE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL CADODB::First()
 {
-    return (FAILED(m_RS->MoveFirst()) ? FALSE : TRUE);
+    if (m_RS == NULL) return FALSE;
+    try {
+        return (FAILED(m_RS->MoveFirst()) ? FALSE : TRUE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL CADODB::Last()
 {
-    return (FAILED(m_RS->MoveLast()) ? FALSE : TRUE);
+    if (m_RS == NULL) return FALSE;
+    try {
+        return (FAILED(m_RS->MoveLast()) ? FALSE : TRUE);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 int CADODB::GetRecCount()
 {
 	HRESULT hr;
-	ASSERT(m_RS != NULL);
+	// ASSERT(m_RS != NULL); // ASSERT는 릴리즈 빌드에서 무시됨 - 명시적 체크로 변경
+	if (m_RS == NULL)
+	{
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetRecCount: m_RS is NULL", m_pScenario->nChan) : xprintf("GetRecCount: m_RS is NULL");
+		return -1;
+	}
 	try
 	{
 		int count = (int)m_RS->GetRecordCount();
@@ -924,14 +1030,26 @@ int CADODB::GetRecCount()
 
 int CADODB::GetFieldCount()
 {
-    return (int)m_RS->Fields->GetCount();
+    if (m_RS == NULL) return 0;
+    try {
+        return (int)m_RS->Fields->GetCount();
+    }
+    catch (...) {
+        m_pScenario != NULL ? xprintf("[CH:%03d] GetFieldCount: Exception occurred", m_pScenario->nChan) : xprintf("GetFieldCount: Exception occurred");
+        return 0;
+    }
 }
 
 void CADODB::RSClose()
 {
     if(ISRSCon())
     {
-        m_RS->Close();
+        try {
+            m_RS->Close();
+        }
+        catch (...) {
+            m_pScenario != NULL ? xprintf("[CH:%03d] RSClose: Exception during Close", m_pScenario->nChan) : xprintf("RSClose: Exception during Close");
+        }
     }
 }
 
@@ -1051,24 +1169,45 @@ BOOL CADODB::Open(char* pSourceBuf, long option)
 {
     if(ISOpen())
     {
-        m_RS.CreateInstance(__uuidof(Recordset));
-        m_RS->PutRefActiveConnection(m_CONN);
-        
-        HRESULT hr;
-        m_RS->CursorType = adOpenStatic;
-        hr = m_RS->Open(pSourceBuf, (IDispatch *)m_CONN, adOpenStatic, adLockOptimistic, option);
-        
-        if(SUCCEEDED(hr))
+        try
         {
-            return TRUE;
+            HRESULT hrCreate = m_RS.CreateInstance(__uuidof(Recordset));
+            if (FAILED(hrCreate) || m_RS == NULL)
+            {
+                m_pScenario != NULL ? xprintf("[CH:%03d] Open: Recordset CreateInstance failed", m_pScenario->nChan) : xprintf("Open: Recordset CreateInstance failed");
+                return FALSE;
+            }
+            m_RS->PutRefActiveConnection(m_CONN);
+
+            HRESULT hr;
+            m_RS->CursorType = adOpenStatic;
+            hr = m_RS->Open(pSourceBuf, (IDispatch *)m_CONN, adOpenStatic, adLockOptimistic, option);
+
+            if(SUCCEEDED(hr))
+            {
+                return TRUE;
+            }
+            else
+            {
+                m_pScenario != NULL ? xprintf("[CH:%03d] Open: Recordset Open failed with HRESULT=0x%08lx", m_pScenario->nChan, hr) : xprintf("Open: Recordset Open failed with HRESULT=0x%08lx", hr);
+                return FALSE;
+            }
         }
-        else
+        catch (_com_error &e)
         {
+            m_pScenario != NULL ? xprintf("[CH:%03d] Open: COM exception - Code=0x%08lx, Msg=%s", m_pScenario->nChan, e.Error(), e.ErrorMessage()) : xprintf("Open: COM exception - Code=0x%08lx, Msg=%s", e.Error(), e.ErrorMessage());
+            PrintProviderError();
+            return FALSE;
+        }
+        catch (...)
+        {
+            m_pScenario != NULL ? xprintf("[CH:%03d] Open: Unknown exception occurred", m_pScenario->nChan) : xprintf("Open: Unknown exception occurred");
             return FALSE;
         }
     }
     else
     {
+        m_pScenario != NULL ? xprintf("[CH:%03d] Open: Connection is not open", m_pScenario->nChan) : xprintf("Open: Connection is not open");
         return FALSE;
     }
 }
@@ -1077,24 +1216,49 @@ BOOL CADODB::Excute(char* pSourceBuf, long option)
 {
     if(ISOpen())
     {
-        m_CMD.CreateInstance(__uuidof(Command));
-        m_CMD->ActiveConnection = m_CONN;
-        m_CMD->CommandText = pSourceBuf;
-        m_CMD->Execute(NULL, NULL, adCmdText);
-        
-        m_RS.CreateInstance(__uuidof(Recordset));
-        m_RS->PutRefSource(m_CMD);
-        
-        _variant_t vNull;
-        vNull.vt = VT_ERROR;
-        vNull.scode = DISP_E_PARAMNOTFOUND;
-        m_RS->CursorLocation = adUseClient;
-        m_RS->Open(vNull, vNull, adOpenDynamic, adLockOptimistic, adCmdUnknown);
-        
-        return TRUE;
+        try
+        {
+            HRESULT hrCmd = m_CMD.CreateInstance(__uuidof(Command));
+            if (FAILED(hrCmd) || m_CMD == NULL)
+            {
+                m_pScenario != NULL ? xprintf("[CH:%03d] Excute: Command CreateInstance failed", m_pScenario->nChan) : xprintf("Excute: Command CreateInstance failed");
+                return FALSE;
+            }
+            m_CMD->ActiveConnection = m_CONN;
+            m_CMD->CommandText = pSourceBuf;
+            m_CMD->Execute(NULL, NULL, adCmdText);
+
+            HRESULT hrRS = m_RS.CreateInstance(__uuidof(Recordset));
+            if (FAILED(hrRS) || m_RS == NULL)
+            {
+                m_pScenario != NULL ? xprintf("[CH:%03d] Excute: Recordset CreateInstance failed", m_pScenario->nChan) : xprintf("Excute: Recordset CreateInstance failed");
+                return FALSE;
+            }
+            m_RS->PutRefSource(m_CMD);
+
+            _variant_t vNull;
+            vNull.vt = VT_ERROR;
+            vNull.scode = DISP_E_PARAMNOTFOUND;
+            m_RS->CursorLocation = adUseClient;
+            m_RS->Open(vNull, vNull, adOpenDynamic, adLockOptimistic, adCmdUnknown);
+
+            return TRUE;
+        }
+        catch (_com_error &e)
+        {
+            m_pScenario != NULL ? xprintf("[CH:%03d] Excute: COM exception - Code=0x%08lx, Msg=%s", m_pScenario->nChan, e.Error(), e.ErrorMessage()) : xprintf("Excute: COM exception - Code=0x%08lx, Msg=%s", e.Error(), e.ErrorMessage());
+            PrintProviderError();
+            return FALSE;
+        }
+        catch (...)
+        {
+            m_pScenario != NULL ? xprintf("[CH:%03d] Excute: Unknown exception occurred", m_pScenario->nChan) : xprintf("Excute: Unknown exception occurred");
+            return FALSE;
+        }
     }
     else
     {
+        m_pScenario != NULL ? xprintf("[CH:%03d] Excute: Connection is not open", m_pScenario->nChan) : xprintf("Excute: Connection is not open");
         return FALSE;
     }
 }
@@ -1109,19 +1273,41 @@ void CADODB::PrintProviderError()
 {
 	// Print Provider Errors from Connection object.
 	// pErr is a record object in the Connection's Error collection.
-	ErrorPtr  pErr = NULL;
 
-	if ((m_CONN->Errors->Count) > 0)
+	// m_CONN NULL 체크 추가 - 시스템 크래시 방지
+	if (m_CONN == NULL)
 	{
-		long nCount = m_CONN->Errors->Count;
+		m_pScenario != NULL ? xprintf("[CH:%03d] PrintProviderError: m_CONN is NULL\n", m_pScenario->nChan) : xprintf("PrintProviderError: m_CONN is NULL\n");
+		return;
+	}
 
-		// Collection ranges from 0 to nCount -1.
-		for (long i = 0; i < nCount; i++)
+	try
+	{
+		ErrorPtr  pErr = NULL;
+
+		if ((m_CONN->Errors->Count) > 0)
 		{
-			pErr = m_CONN->Errors->GetItem(i);
-			m_pScenario != NULL ? xprintf("[CH:%03d] Error number: %x\t%s\n", m_pScenario->nChan, pErr->Number, (LPCSTR)pErr->Description) :
-				xprintf("Error number: %x\t%s\n", pErr->Number, (LPCSTR)pErr->Description);
+			long nCount = m_CONN->Errors->Count;
+
+			// Collection ranges from 0 to nCount -1.
+			for (long i = 0; i < nCount; i++)
+			{
+				pErr = m_CONN->Errors->GetItem(i);
+				if (pErr != NULL)
+				{
+					m_pScenario != NULL ? xprintf("[CH:%03d] Error number: %x\t%s\n", m_pScenario->nChan, pErr->Number, (LPCSTR)pErr->Description) :
+						xprintf("Error number: %x\t%s\n", pErr->Number, (LPCSTR)pErr->Description);
+				}
+			}
 		}
+	}
+	catch (_com_error &e)
+	{
+		m_pScenario != NULL ? xprintf("[CH:%03d] PrintProviderError exception: %s\n", m_pScenario->nChan, e.ErrorMessage()) : xprintf("PrintProviderError exception: %s\n", e.ErrorMessage());
+	}
+	catch (...)
+	{
+		m_pScenario != NULL ? xprintf("[CH:%03d] PrintProviderError: Unknown exception\n", m_pScenario->nChan) : xprintf("PrintProviderError: Unknown exception\n");
 	}
 }
 
