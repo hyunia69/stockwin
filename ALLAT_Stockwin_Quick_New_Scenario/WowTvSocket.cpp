@@ -1078,9 +1078,9 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	strncpy_s(pScenario->m_szpsrtner_nm, sizeof(pScenario->m_szpsrtner_nm),
 			  plInfo.nickName, sizeof(pScenario->m_szpsrtner_nm) - 1);
 
-	// 상품코드 (categoryId_2nd 사용)
+	// 상품코드 (packageId 사용)
 	strncpy_s(pScenario->m_szCC_Prod_Code, sizeof(pScenario->m_szCC_Prod_Code),
-			  plInfo.categoryId_2nd, sizeof(pScenario->m_szCC_Prod_Code) - 1);
+			  plInfo.packageId, sizeof(pScenario->m_szCC_Prod_Code) - 1);
 
 	// 결제금액
 	pScenario->m_nAmount = plInfo.payAmt;

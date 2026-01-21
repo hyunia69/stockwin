@@ -18,6 +18,7 @@
 #define PL_MAX_PG_CODE          4       // PG 코드
 #define PL_MAX_MALL_ID          64      // 상점 ID
 #define PL_MAX_CATEGORY_ID      16      // 카테고리 ID
+#define PL_MAX_PACKAGE_ID       64      // 패키지 ID (상품코드)
 #define PL_MAX_MERCHANT_ID      64      // 가맹점 ID
 #define PL_MAX_FLAG             4       // 플래그 필드
 #define PL_MAX_CARD_COMPANY     32      // 카드사명
@@ -53,7 +54,8 @@ typedef struct _PL_PaymentInfo {
     char pgCode[PL_MAX_PG_CODE + 1];               // PG 코드 (A=올앳, P=페이레터)
     char mallIdSimple[PL_MAX_MALL_ID + 1];         // 상점 ID (간편)
     char mallIdGeneral[PL_MAX_MALL_ID + 1];        // 상점 ID (일반)
-    char categoryId_2nd[PL_MAX_CATEGORY_ID + 1];   // 중분류 카테고리ID (상품코드 대체)
+    char categoryId_2nd[PL_MAX_CATEGORY_ID + 1];   // 중분류 카테고리ID
+    char packageId[PL_MAX_PACKAGE_ID + 1];         // 패키지 ID (상품코드로 사용)
     char merchantId[PL_MAX_MERCHANT_ID + 1];       // 가맹점 ID
     int payAmt;                                     // 실제 결제 금액 (할인 적용 후)
     int purchaseAmt;                                // 상품 원가 (할인 전)

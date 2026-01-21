@@ -682,6 +682,7 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
 
             PL_JsonGetString(response, "pgCode", outInfo->pgCode, sizeof(outInfo->pgCode));
             PL_JsonGetString(response, "categoryId_2nd", outInfo->categoryId_2nd, sizeof(outInfo->categoryId_2nd));
+            PL_JsonGetString(response, "packageId", outInfo->packageId, sizeof(outInfo->packageId));
             PL_JsonGetString(response, "merchantId", outInfo->merchantId, sizeof(outInfo->merchantId));
             PL_JsonGetString(response, "mallIdSimple", outInfo->mallIdSimple, sizeof(outInfo->mallIdSimple));
             PL_JsonGetString(response, "mallIdGeneral", outInfo->mallIdGeneral, sizeof(outInfo->mallIdGeneral));
@@ -719,6 +720,7 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
             PL_Log("PL_GetPaymentInfo: nickName=%s", outInfo->nickName);
             PL_Log("PL_GetPaymentInfo: itemName=%s", outInfo->itemName);
             PL_Log("PL_GetPaymentInfo: pgCode=%s", outInfo->pgCode);
+            PL_Log("PL_GetPaymentInfo: packageId=%s", outInfo->packageId);
             PL_Log("PL_GetPaymentInfo: payAmt=%d, purchaseAmt=%d", outInfo->payAmt, outInfo->purchaseAmt);
             PL_Log("PL_GetPaymentInfo: purchaseLimitFlag=%s", outInfo->purchaseLimitFlag);
             PL_Log("PL_GetPaymentInfo: payAgreeFlag=%s", outInfo->payAgreeFlag);
