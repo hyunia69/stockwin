@@ -520,6 +520,26 @@ unsigned int __stdcall AllatArsPayProcess(void *data)
 
 	xprintf("[CH:%03d] ALLAT_Hangung_Quick_Scenario  AllatArsPayProcess START ", ch);
 
+	// ========== 승인 요청 파라미터 로그 ==========
+	xprintf("[CH:%03d] ========== ALLAT 승인 요청 파라미터 ==========", ch);
+	xprintf("[CH:%03d] [상점정보] shop_id=%s", ch, szShopId);
+	xprintf("[CH:%03d] [상점정보] cross_key=%s", ch, at_cross_key);
+	xprintf("[CH:%03d] [주문정보] order_no=%s", ch, szOrderNo);
+	xprintf("[CH:%03d] [주문정보] product_cd=%s", ch, szProductCd);
+	xprintf("[CH:%03d] [주문정보] product_nm=%s", ch, szProductNm);
+	xprintf("[CH:%03d] [결제정보] amt=%s", ch, szAmt);
+	xprintf("[CH:%03d] [결제정보] sell_mm=%s (할부개월)", ch, szSellMm);
+	xprintf("[CH:%03d] [카드정보] card_no=%c%c%c%c-****-****-**** (앞4자리만)", ch, szCardNo[0], szCardNo[1], szCardNo[2], szCardNo[3]);
+	xprintf("[CH:%03d] [카드정보] cardvalid_ym=%s", ch, szCardValidYm);
+	xprintf("[CH:%03d] [카드정보] passwd_no=** (마스킹)", ch);
+	xprintf("[CH:%03d] [고객정보] shop_member_id=%s", ch, szShopMemberId);
+	xprintf("[CH:%03d] [고객정보] buyer_nm=%s", ch, szBuyerNm);
+	xprintf("[CH:%03d] [고객정보] email_addr=%s", ch, szEmailAddr);
+	xprintf("[CH:%03d] [고객정보] business_type=%s (0:개인, 1:법인)", ch, szBusinessType);
+	xprintf("[CH:%03d] [고객정보] birth_ymd=%s", ch, szBirthYmd);
+	xprintf("[CH:%03d] [기타] cardcert_yn=%s, zerofee_yn=%s, bonus_yn=%s", ch, szCardCertYn, szZerofeeYn, szBonusYn);
+	xprintf("[CH:%03d] ==============================================", ch);
+
 	if (ApprovalReq(at_data, "SSL", sMsg) != 0){
 		/// 에러처리
 		pScenario->m_PaySysCd = -1;

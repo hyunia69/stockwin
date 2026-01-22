@@ -1061,17 +1061,18 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	strncpy_s(pScenario->m_szMx_id, sizeof(pScenario->m_szMx_id),
 			  plInfo.mallIdGeneral, sizeof(pScenario->m_szMx_id) - 1);
 
-	// 회원ID (memberId → cc_name 대체)
+	// 고객명 (nickName → CC_NAME, buyer_nm으로 승인 요청에 사용)
 	strncpy_s(pScenario->m_szCC_name, sizeof(pScenario->m_szCC_name),
-			  plInfo.memberId, sizeof(pScenario->m_szCC_name) - 1);
+			  plInfo.nickName, sizeof(pScenario->m_szCC_name) - 1);
+	xprintf("[CH:%03d] PL_InfoOrderReq: CC_NAME(buyer_nm)=%s (from nickName)", ch, pScenario->m_szCC_name);
 
 	// 상품명
 	strncpy_s(pScenario->m_szCC_Prod_Desc, sizeof(pScenario->m_szCC_Prod_Desc),
 			  plInfo.itemName, sizeof(pScenario->m_szCC_Prod_Desc) - 1);
 
-	// 필명 (nickName → partner_nm 대체, TTS 안내용)
+	// 필명 (고정값 사용)
 	strncpy_s(pScenario->m_szpsrtner_nm, sizeof(pScenario->m_szpsrtner_nm),
-			  plInfo.nickName, sizeof(pScenario->m_szpsrtner_nm) - 1);
+			  "파트너", sizeof(pScenario->m_szpsrtner_nm) - 1);
 
 	// 상품코드 (packageId 사용)
 	strncpy_s(pScenario->m_szCC_Prod_Code, sizeof(pScenario->m_szCC_Prod_Code),
