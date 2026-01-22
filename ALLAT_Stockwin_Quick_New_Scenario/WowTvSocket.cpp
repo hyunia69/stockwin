@@ -742,11 +742,6 @@ unsigned int __stdcall Wow_InfoRodocReq_Process(void *data)
 		return 0;
 	}
 
-	//AHN 20240630 개인정보보호
-	xprintf("stuReq_Body.m_szHP_NO before : ", stuReq_Body.m_szHP_NO);
-	memset(stuReq_Body.m_szHP_NO, 0x00, sizeof(stuReq_Body.m_szHP_NO));
-	xprintf("stuReq_Body.m_szHP_NO after : ", stuReq_Body.m_szHP_NO);
-
 	bRet = pScenario->m_AdoDb->RegOrderInfo(stuReq_Body, stu_InfoProdocRes);
 
 	if (bRet == TRUE)
@@ -1181,8 +1176,9 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	INFOPRODOCREQ stuReq_Body;
 	memset(&stuReq_Body, 0x00, sizeof(INFOPRODOCREQ));
 	sprintf_s(stuReq_Body.m_szDNIS, sizeof(stuReq_Body.m_szDNIS), "%s", pScenario->szDnis);
-	// 휴대폰번호는 개인정보 보호를 위해 저장하지 않음
-	memset(stuReq_Body.m_szHP_NO, 0x00, sizeof(stuReq_Body.m_szHP_NO));
+	// 휴대폰번호 저장
+	sprintf_s(stuReq_Body.m_szHP_NO, sizeof(stuReq_Body.m_szHP_NO), "%s", pScenario->m_szInputTel);
+	xprintf("[CH:%03d] PL_InfoOrderReq_Process: stuReq_Body.m_szHP_NO=%s (from m_szInputTel=%s)", ch, stuReq_Body.m_szHP_NO, pScenario->m_szInputTel);
 
 	INFOPRODOCRES stu_InfoProdocRes;
 	memset(&stu_InfoProdocRes, 0x00, sizeof(INFOPRODOCRES));

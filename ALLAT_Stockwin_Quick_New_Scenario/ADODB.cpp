@@ -1698,7 +1698,7 @@ int CADODB::RegOrderInfo(INFOPRODOCREQ infoReq, INFOPRODOCRES infoOrder)
 			TEXT(infoOrder.m_szshop_id),		    // MX_ID						
 			TEXT(infoOrder.m_szshop_id),    	    // MX_OPT					
 			TEXT(infoOrder.m_szshop_id),            // ADMIN_ID					 
-			TEXT(infoOrder.m_szcc_name),            // CC_NAME					
+			"고객님",                               // CC_NAME (고정값)
 			TEXT(infoOrder.m_szcc_pord_desc), TEXT(infoOrder.m_szcc_pord_code), // CC_PORD_DESC ^ PORD_CODE	
 			TEXT(infoOrder.m_szamount),   		    // AMOUNT				
 			TEXT(infoReq.m_szHP_NO),   		        // PHONE_NO	
