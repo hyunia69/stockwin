@@ -94,3 +94,4 @@ Visual Studio C++ 프로젝트입니다. 빌드 전 필요 사항:
 - md 파일은 claudedocs 폴더 아래 생성한다.
 - 파이선 코드나 기타 유틸리티는 utils 폴더 아래 생성한다.
 - `.env` 파일은 git에 커밋하지 않는다 (.gitignore에 추가 권장).
+- 현재는 ALLAT_Stockwin_Quick_New_Scenario 만 검토 대상이다. 모든 작업은 이 시나리오만 적용한다.

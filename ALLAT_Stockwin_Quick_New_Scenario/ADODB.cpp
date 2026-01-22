@@ -695,13 +695,15 @@ unsigned int __stdcall AllatPayRetProcess(void *data)
 		pScenario->m_hSession = NULL;
 	}
 
-	Http_SSL_RetPageSend(data, pScenario->m_szSHOP_RET_URL_AG, "POST"); //221208
-	if (pScenario->m_RetCode < 0)
-	{
-		HttpQuithostio("AllatPayRetProcess 응답 XML 수신 실패", ch);
-		return 0;
-	}
-	HttpQuithostio("AllatPayRetProcess END", ch);
+	// Noti 전송 비활성화 - 승인 후 Noti를 보낼 필요 없음
+	// Http_SSL_RetPageSend(data, pScenario->m_szSHOP_RET_URL_AG, "POST"); //221208
+	// if (pScenario->m_RetCode < 0)
+	// {
+	// 	HttpQuithostio("AllatPayRetProcess 응답 XML 수신 실패", ch);
+	// 	return 0;
+	// }
+	xprintf("[CH:%03d] AllatPayRetProcess Noti 전송 SKIP (비활성화됨)", ch);
+	HttpQuithostio("AllatPayRetProcess END (Noti SKIP)", ch);
 	return 0;
 }
 
