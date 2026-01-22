@@ -451,6 +451,28 @@ Content-Type: application/json; charset=utf-8
 
 ### 5.3 제거 대상 코드
 
+#### 5.3.0 승인 후 Noti 전송 비활성화 (ADODB.cpp)
+
+> **⚠️ 승인 후 Noti 전송 기능이 비활성화됨. Noti를 보낼 필요 없음.**
+
+| 함수명 | Line | 변경내용 | 상태 |
+|--------|------|----------|------|
+| `AllatPayRetProcess` | 667-708 | `Http_SSL_RetPageSend` 호출 주석 처리 | 완료 |
+| `AllatPayRetPrc_host` | 710-732 | 호출되어도 실제 Noti 전송하지 않음 | 완료 |
+
+**변경 내용:**
+```cpp
+// 비활성화 전
+Http_SSL_RetPageSend(data, pScenario->m_szSHOP_RET_URL_AG, "POST");
+
+// 비활성화 후
+// Noti 전송 비활성화 - 승인 후 Noti를 보낼 필요 없음
+// Http_SSL_RetPageSend(data, pScenario->m_szSHOP_RET_URL_AG, "POST");
+xprintf("[CH:%03d] AllatPayRetProcess Noti 전송 SKIP (비활성화됨)", ch);
+```
+
+**참고:** WowTvSocket.cpp의 `Http_SSL_RetPageSend` 호출(주문 정보 조회용)은 유지됨.
+
 #### 5.3.1 정기결제 관련 코드 (일반결제에서 불필요)
 
 | 코드 영역 | Line | 설명 |
@@ -571,8 +593,8 @@ typedef struct Payment_Info_Response_V2
     char m_szBonusCashUseFlag[4];    // 보너스캐시 여부 (Y/N)
     int  m_nBonusCashUseAmt;         // 보너스캐시 금액
     int  m_nPurchaseAmt;             // 상품원가 (할인전)
-    char m_szNotiUrlSimple[204];     // Notification URL (간편)
-    char m_szNotiUrlGeneral[204];    // Notification URL (일반)
+    char m_szNotiUrlSimple[204];     // Notification URL (간편) - ⚠️ 미사용 (Noti 비활성화)
+    char m_szNotiUrlGeneral[204];    // Notification URL (일반) - ⚠️ 미사용 (Noti 비활성화)
     char m_szBillKey[132];           // 빌키
     char m_szBillPassword[132];      // 빌키 비밀번호
     char m_szCardCompany[34];        // 카드사명

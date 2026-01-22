@@ -109,7 +109,7 @@ ALLAT_Stockwin_Quick_New_Scenario의 기존 ASP/XML 기반 API를 새로운 REST
 | `AMOUNT` | XML amount | JSON payAmt | 결제금액 |
 | `CC_EMAIL` | DB 조회 | DB 조회 (기존 유지) | 이메일 |
 | `URL_YN` | DB 조회 | DB 조회 (기존 유지) | 콜백여부 |
-| `SHOP_RET_URL` | DB 조회 | JSON notiUrlGeneral | 콜백URL |
+| `SHOP_RET_URL` | DB 조회 | JSON notiUrlGeneral | 콜백URL (⚠️ Noti 전송 비활성화됨) |
 
 #### 2.2.5 결제 API 파라미터 (변경 없음)
 

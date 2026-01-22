@@ -254,8 +254,8 @@ POST /v1/payment/simple/getpaymentinfo_V2
 | `BonusCashUseFlag` | String(1) | 보너스 캐시 존재 여부: `Y`/`N` |
 | `BonusCashUseAmt` | Int64 | 보너스 캐시 사용 금액 |
 | `purchaseAmt` | Int64 | 상품 원가 (할인 전) |
-| `notiUrlSimple` | String(200) | Notification URL (간편) |
-| `notiUrlGeneral` | String(200) | Notification URL (일반) |
+| `notiUrlSimple` | String(200) | Notification URL (간편) - ⚠️ ARS에서 미사용 (Noti 비활성화) |
+| `notiUrlGeneral` | String(200) | Notification URL (일반) - ⚠️ ARS에서 미사용 (Noti 비활성화) |
 | `billKey` | String(128) | 정기결제 키 |
 | `billPassword` | String(128) | 정기결제 비밀번호 |
 | `cardCompany` | String(30) | 카드사명 |

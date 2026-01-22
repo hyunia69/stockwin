@@ -355,7 +355,7 @@ ALLAT_payARS
     │    │
     │    └─ URL_YN == "Y" → 외부 URL 콜백 처리
     │        → CreateAg() (응답 URL 생성)
-    │        → AllatPayRetPrc_host(92) (결과 전송)
+    │        → AllatPayRetPrc_host(92) (⚠️ Noti 전송 비활성화됨 - SKIP)
     │
     ├─[state=70] 로그 저장
     │           → setPayLog_host(92)
@@ -491,7 +491,7 @@ ANI 검사
 |--------|------|------|
 | `AllatPaymemt_host` | 일반 신용카드 결제 | 카드번호+유효기간+할부로 결제 승인 요청 |
 | `AllatPayCancle_host` | 결제 취소 | 로그 저장 실패, 주문상태 변경 실패시 자동 취소 |
-| `AllatPayRetPrc_host` | 결제 결과 URL 콜백 | URL_YN=="Y"인 경우 외부 URL로 결과 전송 |
+| `AllatPayRetPrc_host` | 결제 결과 URL 콜백 | ⚠️ **비활성화됨** - Noti 전송 불필요 |
 
 ### 결제 요청 파라미터 (AllatArsPayProcess)
 

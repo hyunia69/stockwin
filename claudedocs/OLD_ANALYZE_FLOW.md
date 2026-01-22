@@ -473,7 +473,7 @@ ALLAT_payARS
     │    │
     │    └─ URL_YN == "Y" → 외부 URL 콜백 처리
     │        → CreateAg() (응답 URL 생성)
-    │        → AllatPayRetPrc_host (결과 전송)
+    │        → AllatPayRetPrc_host (⚠️ Noti 전송 비활성화됨 - SKIP)
     │
     ├─[state=70] 로그 저장
     │
@@ -609,7 +609,7 @@ m_nAmount 체크 (PARAINI의 ALLAT_MIN_AMT, 기본값 50,000원)
 | `setPayLog_host` | 결제 로그 저장 |
 | `upOrderPayState_host` | 주문 결제상태 변경 |
 | `bill_delTcp_host` | 빌키 삭제 (외부 서버 동기화) |
-| `AllatPayRetPrc_host` | 결제 결과 외부 URL 콜백 |
+| `AllatPayRetPrc_host` | 결제 결과 외부 URL 콜백 (⚠️ 비활성화됨) |
 
 ---
 
