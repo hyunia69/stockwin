@@ -101,6 +101,7 @@ paths:
                     - ADVRESERVD
                     - EDUCATION
                     - SERVICE
+                    - TABLET
                 amount:
                   type: string
                   description: 결제/안내 금액

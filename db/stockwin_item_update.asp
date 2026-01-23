@@ -206,6 +206,9 @@ End If
 If product_code <> "" Then
     dnis_descript = dnis_descript & ",""product_code"":""" & product_code & """"
 End If
+If service_name <> "" Then
+    dnis_descript = dnis_descript & ",""service_name"":""" & service_name & """"
+End If
 dnis_descript = dnis_descript & "}"
 
 ' DB 처리
@@ -249,7 +252,7 @@ If dnisCount = 0 Then
           "'" & Replace(DLL_NAME_VALUE, "'", "''") & "', " & _
           "'" & Replace(dnis_descript, "'", "''") & "', " & _
           "'" & PG_CODE_VALUE & "', " & _
-          "'" & Replace(service_name, "'", "''") & "', " & _
+          "'" & Replace(arrribute_type, "'", "''") & "', " & _
           "'Y', 'N', " & _
           "GETDATE(), GETDATE(), 'SYSTEM'" & _
           ")"
@@ -269,7 +272,7 @@ Else
           "ARS_TYPE = '" & Replace(scenario_type, "'", "''") & "', " & _
           "DLL_NAME = '" & Replace(DLL_NAME_VALUE, "'", "''") & "', " & _
           "DNIS_DESCRIPT = '" & Replace(dnis_descript, "'", "''") & "', " & _
-          "SERVOCE_NAME = '" & Replace(service_name, "'", "''") & "', " & _
+          "SERVOCE_NAME = '" & Replace(arrribute_type, "'", "''") & "', " & _
           "WRITE_DT = GETDATE() " & _
           "WHERE ARS_DNIS = '" & Replace(ars_tel_no, "'", "''") & "'"
 
