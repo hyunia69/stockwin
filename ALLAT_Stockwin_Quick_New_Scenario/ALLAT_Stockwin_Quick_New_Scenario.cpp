@@ -74,7 +74,7 @@ extern int getOrderInfo_host_wrapper(int holdm);  // USE_NEW_API 분기 처리
 int ALLAT_ArsScenarioStart(/* [in] */int state);
 int ALLAT_SMSScenarioStart(/* [in] */int state);
 int ALLAT_CID_ScenarioStart(/* [in] */int state);
-int ALLAT_CIA_ScenarioStart(/* [in] */int state);
+int ALLAT_CIP_ScenarioStart(/* [in] */int state);
 
 #ifndef u_char
 #define u_char	unsigned char
@@ -1396,7 +1396,7 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			eprintf("ALLAT_WOWTV_Quick_getOrderInfo [%d] 고객 주문 정보 안내 부> 존재하지 않은 주문 정보", state);
 			new_guide();
 
-			// CIA의 경우, ANI 정보로 정보 획득 되나...
+			// CIP의 경우, ANI 정보로 정보 획득 되나...
 			// ANI 정보로 한번 무조건 획득하는 구조가 아닌
 			// ANI 정보가 휴대폰 인지 검증후, 입력 받도록 하고 또한 휴대 전화 검증 한다.
 			// 휴대 전화의 경우, 신규 고객의 경우, 무조건 신규 등록 후, 해당 정보가 획득 되어
@@ -1486,7 +1486,7 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			if (strcmp(pScenario->szArsType, "ARS") == 0) return ALLAT_ArsScenarioStart(1);
 			else if (strcmp(pScenario->szArsType, "SMS") == 0) return ALLAT_SMSScenarioStart(1);
 			else if (strcmp(pScenario->szArsType, "CID") == 0) return  ALLAT_CID_ScenarioStart(1);
-			else if (strcmp(pScenario->szArsType, "CIA") == 0) return  ALLAT_CIA_ScenarioStart(1);
+			else if (strcmp(pScenario->szArsType, "CIP") == 0) return  ALLAT_CIP_ScenarioStart(1);
 			else return pScenario->jobArs(0);
 		}
 	case 9:
@@ -1569,7 +1569,7 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			if (strcmp(pScenario->szArsType, "ARS") == 0) return ALLAT_ArsScenarioStart(1);
 			else if (strcmp(pScenario->szArsType, "SMS") == 0) return ALLAT_SMSScenarioStart(1);
 			else if (strcmp(pScenario->szArsType, "CID") == 0) return  ALLAT_CID_ScenarioStart(1);
-			else if (strcmp(pScenario->szArsType, "CIA") == 0) return  ALLAT_CIA_ScenarioStart(1);
+			else if (strcmp(pScenario->szArsType, "CIP") == 0) return  ALLAT_CIP_ScenarioStart(1);
 			else return pScenario->jobArs(0);
 		}
 	case 20 :
@@ -1932,7 +1932,7 @@ int ALLAT_CID_ScenarioStart(/* [in] */int state)
 }
 
 
-int ALLAT_CIA_ScenarioStart(/* [in] */int state)
+int ALLAT_CIP_ScenarioStart(/* [in] */int state)
 {
 	int		c = 0;
 	//int(*PrevCall)(int);
@@ -1942,7 +1942,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 	if (*lpmt)
 	{
 		c = *((*lpmt)->dtmfs);
-		(*lpmt)->PrevCall = ALLAT_CIA_ScenarioStart;
+		(*lpmt)->PrevCall = ALLAT_CIP_ScenarioStart;
 		(*lpmt)->prevState = state;
 	}
 	//일단 CARD 결제 고정
@@ -1958,13 +1958,13 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 		char TempPath[1024 + 1] = { 0x00, };
 		new_guide();
 		pScenario->InputErrCnt = 0;
-		info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 인사말...", state);
-		eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 인사말", state);
+		info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 인사말...", state);
+		eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 인사말", state);
 
 		//sprintf_s(TempPath, sizeof(TempPath), "audio\\shop_intro\\%s", (*lpmt)->dnis);
 		sprintf_s(TempPath, sizeof(TempPath), "audio\\shop_intro\\wownet_intro", (*lpmt)->dnis);
 		set_guide(VOC_WAVE_ID, TempPath);	 // "인사말"
-		setPostfunc(POST_PLAY, ALLAT_CIA_ScenarioStart, 1, 0);
+		setPostfunc(POST_PLAY, ALLAT_CIP_ScenarioStart, 1, 0);
 		return send_guide(NODTMF);
 	}
 
@@ -1981,7 +1981,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			strncmp(pScenario->m_szInputTel, "018", 3) != 0 &&
 			strncmp(pScenario->m_szInputTel, "019", 3) != 0)
 		{
-			return ALLAT_CIA_ScenarioStart(11);
+			return ALLAT_CIP_ScenarioStart(11);
 		}
 		setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
 		return getOrderInfo_host_wrapper(90);
@@ -1990,16 +1990,16 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 
 	case 11:
 		new_guide();
-		info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부...", state);
-		eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부", state);
+		info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부...", state);
+		eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부", state);
 		set_guide(VOC_WAVE_ID, "ment\\_common\\common_audio\\input_telnum_start");	 // "전화 번호 입력"
-		setPostfunc(POST_DTMF, ALLAT_CIA_ScenarioStart, 12, 0);
+		setPostfunc(POST_DTMF, ALLAT_CIP_ScenarioStart, 12, 0);
 		return send_guide(13);
 
 	case 12:// 전화 번호 입력 처리
 		if ((check_validform("*#:7:12", (*lpmt)->refinfo)) < 0)	// 눌린 dtmf값이 8~12의 길이이며 *또는#으로 끝이났다.
 		{
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>잘못 누르셨습니다.....", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>잘못 누르셨습니다.....", state);
 			return send_error();
 		}
 		if (strncmp((*lpmt)->dtmfs, "010", 3) != 0 &&
@@ -2010,15 +2010,15 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			strncmp((*lpmt)->dtmfs, "018", 3) != 0 &&
 			strncmp((*lpmt)->dtmfs, "019", 3) != 0)
 		{
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부(형식 오류)>잘못 누르셨습니다.....", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부(형식 오류)>잘못 누르셨습니다.....", state);
 			return send_error();
 		}
 		new_guide();
 		memset(pScenario->m_szInputTel, 0x00, sizeof(pScenario->m_szInputTel));
 		memcpy(pScenario->m_szInputTel, (*lpmt)->refinfo, sizeof(pScenario->m_szInputTel) - 1);
 
-		info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
-		eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
+		info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
+		eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
 		if (TTS_Play)
 		{
 			char TTSBuf[1024 + 1] = { 0x00, };
@@ -2032,7 +2032,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			}
 
 
-			setPostfunc(POST_NET, ALLAT_CIA_ScenarioStart, 13, 0);
+			setPostfunc(POST_NET, ALLAT_CIP_ScenarioStart, 13, 0);
 			return TTS_Play((*lpmt)->chanID, 92, "고객님께서 누르신 전화번호는, %s 번 입니다.", TTSBuf);
 		}
 		else
@@ -2045,8 +2045,8 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 		if (pScenario->m_TTSAccess == -1)//201701.04
 		{
 			new_guide();
-			info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
+			info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
 			set_guide(VOC_WAVE_ID, "ment\\TTS_TimeOut");	 // "현재 통화량이 많아!지연상황이 발생..."
 			setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
 			return send_guide(NODTMF);
@@ -2061,38 +2061,38 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			set_guide(VOC_WAVE_ID, "ment/_common/common_audio/input_confirm");
 			memset(pScenario->szTTSFile, 0x00, sizeof(pScenario->szTTSFile));// 플래이 직후 삭제 처리
 		}
-		setPostfunc(POST_DTMF, ALLAT_CIA_ScenarioStart, 14, 0);
+		setPostfunc(POST_DTMF, ALLAT_CIP_ScenarioStart, 14, 0);
 		return send_guide(1);
 	case 14:
 		if (check_validdtmf && !check_validdtmf(c, "12"))	// 누른 DTMF값이 1,2만 유효하다.
 		{
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>잘못 누르셨습니다....", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>잘못 누르셨습니다....", state);
 			return send_error();
 		}
 		new_guide();
 
 		if (c == '1') //예
 		{
-			info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart[%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
+			info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart[%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
 
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
 			return getOrderInfo_host_wrapper(90);
 		}
 		else if (c == '2')//아니오
 		{
-			info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
-			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
+			info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
+			eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
 
-			return ALLAT_CIA_ScenarioStart(11);
+			return ALLAT_CIP_ScenarioStart(11);
 		}
 
 	case 0xffff:
 		new_guide();
 		return  goto_hookon();
 	default:
-		info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d]  C고객 회원 번호 8자리 번호 입력 부> 시나리오 아이디 오류", state);
-		eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart[%d]  고객 회원 번호 8자리 번호 입력 부>시나리오 아이디 오류", state);
+		info_printf(localCh, "ALLAT_WOWTV_Quick_CIPScenarioStart [%d]  C고객 회원 번호 8자리 번호 입력 부> 시나리오 아이디 오류", state);
+		eprintf("ALLAT_WOWTV_Quick_CIPScenarioStart[%d]  고객 회원 번호 8자리 번호 입력 부>시나리오 아이디 오류", state);
 		set_guide(399);
 		setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
 		return send_guide(NODTMF);
@@ -2173,7 +2173,7 @@ int CALLAT_Hangung_Quick_Scenario::jobArs(/* [in] */int state)
 	if (strcmp(szArsType, "ARS") == 0) return ALLAT_ArsScenarioStart(0);
 	else if (strcmp(szArsType, "SMS") == 0) return ALLAT_SMSScenarioStart(0);
 	else if (strcmp(szArsType, "CID") == 0) return  ALLAT_CID_ScenarioStart(0);
-	else if (strcmp(szArsType, "CIA") == 0) return  ALLAT_CIA_ScenarioStart(0);
+	else if (strcmp(szArsType, "CIP") == 0) return  ALLAT_CIP_ScenarioStart(0);
 
 	return ALLAT_jobArs(0);
 }

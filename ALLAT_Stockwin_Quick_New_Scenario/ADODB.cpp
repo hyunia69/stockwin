@@ -1684,7 +1684,7 @@ int CADODB::RegOrderInfo(INFOPRODOCREQ infoReq, INFOPRODOCRES infoOrder)
 			" \'%s\', \n"                                                                                          // AMOUNT 						
 			" \'%s\', \n"                                                                                          // PHONE_NO						
 			" \'\', \n"                                                                                            // AUTH_NO						
-			" \'CIA\', \n"                                                                                         // REQUEST_TYPE					
+			" \'CIP\', \n"                                                                                         // REQUEST_TYPE					
 			" \'\', \n"                                                                                            // REPLY_CODE					
 			" \'\', \n"                                                                                            // REPLY_MESSAGE					
 			" getdate(), \n"                                                                                       // REG_DATE						
