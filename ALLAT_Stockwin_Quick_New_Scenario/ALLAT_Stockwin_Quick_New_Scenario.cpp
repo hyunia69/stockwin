@@ -1493,15 +1493,131 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 		if (TTS_Play)
 		{
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 10, 0);
-			//return TTS_Play((*lpmt)->chanID, 92, "%s 고객님께서는 %s에서, 결제하실 금액은 %d원 입니다.",
-			//2017.01.24
-			//한국경제WOWTV 김상기 차창의 요청
-			//전체를 TTS로 하며, 해지에 관련된 내용을 재생하도록 한다.
-			return TTS_Play((*lpmt)->chanID, 92, "%s 고객님, %s에서 , 주문하신 %s의 결제하실 금액은 %d원 입니다. 서비스 중도해지시 해지일까지 일수 만큼의 이용요금과  가입비의 10퍼센트에 해당되는 해지수수료, 사은품 비용이 함께 차감됩니다. 또한, 한국경제티비와, 파트너는, 금융투자업자가 아닌, 유사투자자문업자로, 개별적인 투자 상담과 자금 운영이 불가하며, 원금 손실이 발생할 수 있고, 그 손실은 투자자에게 귀속됩니다. 동의 및 결제하시려면 1번을, 취소하시려면 2번을 눌러주세요.",
-				pScenario->m_szCC_name,
-				pScenario->m_szMx_name,
-				pScenario->m_szCC_Prod_Desc,
-				pScenario->m_nAmount);
+
+			// ================================================================
+			// 결제금액 안내 멘트 생성 (4분기)
+			// ================================================================
+			char szPaymentMent[1024] = {0};
+
+			// 할인 적용 여부에 따른 결제금액 안내
+			bool bCoupon = (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 &&
+							strlen(pScenario->m_szCouponName) > 0);
+			bool bBonusCash = (pScenario->m_nBonusCashUseAmt > 0);
+
+			if (bCoupon && bBonusCash) {
+				// 쿠폰 + 보너스캐시 둘 다 적용
+				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
+					"%s님께서 보유하신 %s 쿠폰과 보너스 캐시 %d원이 적용되어 "
+					"최종 결제 금액은 %d원입니다.",
+					pScenario->m_szCC_name,
+					pScenario->m_szMx_name,
+					pScenario->m_szCC_Prod_Desc,
+					pScenario->m_szCC_name,
+					pScenario->m_szCouponName,
+					pScenario->m_nBonusCashUseAmt,
+					pScenario->m_nAmount);
+			}
+			else if (bCoupon) {
+				// 쿠폰만 적용
+				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
+					"%s님께서 보유하신 %s 쿠폰이 적용되어 "
+					"최종 결제 금액은 %d원입니다.",
+					pScenario->m_szCC_name,
+					pScenario->m_szMx_name,
+					pScenario->m_szCC_Prod_Desc,
+					pScenario->m_szCC_name,
+					pScenario->m_szCouponName,
+					pScenario->m_nAmount);
+			}
+			else if (bBonusCash) {
+				// 보너스캐시만 적용
+				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
+					"%s님께서 보유하신 보너스 캐시 %d원이 적용되어 "
+					"최종 결제 금액은 %d원입니다.",
+					pScenario->m_szCC_name,
+					pScenario->m_szMx_name,
+					pScenario->m_szCC_Prod_Desc,
+					pScenario->m_szCC_name,
+					pScenario->m_nBonusCashUseAmt,
+					pScenario->m_nAmount);
+			}
+			else {
+				// 할인 없음 (기본)
+				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
+					"%s 고객님, %s에서, 주문하신 %s의 "
+					"결제하실 금액은 %d원입니다.",
+					pScenario->m_szCC_name,
+					pScenario->m_szMx_name,
+					pScenario->m_szCC_Prod_Desc,
+					pScenario->m_nAmount);
+			}
+
+			// ================================================================
+			// 상품유형별 해지조건 안내 멘트 생성
+			// ================================================================
+			char szTermsMent[1024] = {0};
+
+			// 상품유형 분기 로그
+			xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형 분기 - categoryId=%s, coupon=%s, bonusCash=%d",
+				localCh, pScenario->m_szCategoryId, bCoupon ? "Y" : "N", bBonusCash ? 1 : 0);
+
+			if (strcmp(pScenario->m_szCategoryId, "TABLET") == 0) {
+				// 태블릿 제공 상품
+				xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형=TABLET -> 교환/반품 불가 안내", localCh);
+				strcpy_s(szTermsMent, sizeof(szTermsMent),
+					"박스 개봉 후 제품 불량을 제외하고는 교환 및 반품이 불가합니다.");
+			}
+			else if (strcmp(pScenario->m_szCategoryId, "EDUCATION") == 0) {
+				// 교육상품
+				xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형=EDUCATION -> 해지 불가 안내", localCh);
+				strcpy_s(szTermsMent, sizeof(szTermsMent),
+					"본 상품은 교육 상품으로 결제 후 해지가 불가능합니다. "
+					"또한, 무료로 제공되는 서비스는 중도 해지 및 일시 정지 파일 양도가 불가합니다.");
+			}
+			else {
+				// 일반상품 (SERVICE 또는 기타)
+				xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형=SERVICE(기본) -> 해지수수료 안내", localCh);
+				strcpy_s(szTermsMent, sizeof(szTermsMent),
+					"서비스 중도해지 시 해지일까지 이용요금과 해지수수료 10퍼센트와 "
+					"제공받으신 사은품 정가가 함께 차감됩니다.");
+
+				// 쿠폰/보너스캐시 사용 시 소멸 안내 추가
+				if (bCoupon || bBonusCash) {
+					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰/보너스캐시 사용 -> 소멸 안내 추가", localCh);
+					strcat_s(szTermsMent, sizeof(szTermsMent),
+						" 또한 적용된 쿠폰 및 보너스 캐시는 해지 시 소멸됩니다.");
+				}
+			}
+
+			// ================================================================
+			// 투자 유의사항 안내
+			// ================================================================
+			const char* szInvestMent =
+				"또한, 한국경제티비와, 파트너는, 금융투자업자가 아닌, 유사투자자문업자로, "
+				"개별적인 투자 상담과 자금 운영이 불가하며, "
+				"원금 손실이 발생할 수 있고, 그 손실은 투자자에게 귀속됩니다.";
+
+			// ================================================================
+			// 동의 확인 멘트
+			// ================================================================
+			const char* szConfirmMent =
+				"동의 및 결제하시려면 1번을, 취소하시려면 2번을 눌러주세요.";
+
+			// ================================================================
+			// 전체 TTS 멘트 조합
+			// ================================================================
+			char szFullMent[4096] = {0};
+			sprintf_s(szFullMent, sizeof(szFullMent),
+				"%s %s %s %s",
+				szPaymentMent,
+				szTermsMent,
+				szInvestMent,
+				szConfirmMent);
+
+			return TTS_Play((*lpmt)->chanID, 92, "%s", szFullMent);
 		}
 		else
 		{

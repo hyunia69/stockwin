@@ -113,6 +113,9 @@ public:
 	// 신규 API 사용 플래그
 	bool  m_bUseNewAPI;              // 신규 API 사용 여부
 
+	// 상품유형 (categoryId_2nd 기반)
+	char  m_szCategoryId[17];        // 상품유형 (SERVICE/TABLET/EDUCATION)
+
 private:
 
 

@@ -921,6 +921,7 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	pScenario->m_nMemberState = 0;
 	memset(pScenario->m_szServiceCheckFlag, 0x00, sizeof(pScenario->m_szServiceCheckFlag));
 	memset(pScenario->m_szMemberId, 0x00, sizeof(pScenario->m_szMemberId));
+	memset(pScenario->m_szCategoryId, 0x00, sizeof(pScenario->m_szCategoryId));
 
 	// 스레드 유효성 검사
 	if (threadID != lineTablePtr->threadID) {
@@ -1102,6 +1103,18 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	strncpy_s(pScenario->m_szBonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag),
 			  plInfo.bonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag) - 1);
 	pScenario->m_nBonusCashUseAmt = plInfo.bonusCashUseAmt;
+
+	// 상품유형 (categoryId_2nd)
+	// TABLET, EDUCATION 외에는 모두 SERVICE로 정규화
+	if (strcmp(plInfo.categoryId_2nd, "TABLET") == 0 ||
+		strcmp(plInfo.categoryId_2nd, "EDUCATION") == 0) {
+		strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+				  plInfo.categoryId_2nd, sizeof(pScenario->m_szCategoryId) - 1);
+	} else {
+		strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+				  "EDUCATION", sizeof(pScenario->m_szCategoryId) - 1);
+	}
+	xprintf("[CH:%03d] PL_InfoOrderReq: 상품유형(categoryId_2nd)=%s (원본=%s)", ch, pScenario->m_szCategoryId, plInfo.categoryId_2nd);
 
 	// 구매 제한/상태 정보
 	strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),

@@ -726,6 +726,7 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
             PL_Log("PL_GetPaymentInfo: payAgreeFlag=%s", outInfo->payAgreeFlag);
             PL_Log("PL_GetPaymentInfo: memberState=%d", outInfo->memberState);
             PL_Log("PL_GetPaymentInfo: billKey=%s", strlen(outInfo->billKey) > 0 ? "(exists)" : "(empty)");
+            PL_Log("PL_GetPaymentInfo: categoryId_2nd=%s", outInfo->categoryId_2nd);
 
             return 1;
         }
