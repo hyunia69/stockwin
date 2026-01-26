@@ -1116,6 +1116,87 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	}
 	xprintf("[CH:%03d] PL_InfoOrderReq: 상품유형(categoryId_2nd)=%s (원본=%s)", ch, pScenario->m_szCategoryId, plInfo.categoryId_2nd);
 
+	// ================================================================
+	// NEW: DNIS 기반 카테고리 오버라이드 (USE_DNIS_CATEGORY 플래그)
+	// 2026-01-27 추가
+	// ================================================================
+	char szUseDnisCategory[8] = {0};
+	GetPrivateProfileStringA("CATEGORY_SOURCE", "USE_DNIS_CATEGORY", "false",
+	                         szUseDnisCategory, sizeof(szUseDnisCategory), PARAINI);
+
+	if (_stricmp(szUseDnisCategory, "true") == 0) {
+		xprintf("[CH:%03d] DNIS 기반 카테고리 조회 활성화", ch);
+
+		char szServoceName[128] = {0};
+		char szApiCategoryBackup[17] = {0};
+
+		// API 값 백업 (폴백용)
+		strncpy_s(szApiCategoryBackup, sizeof(szApiCategoryBackup),
+		          pScenario->m_szCategoryId, sizeof(szApiCategoryBackup) - 1);
+
+		// COMMON_DNIS_INFO.SERVOCE_NAME 조회
+		CADODB tempDb(pScenario);
+
+		char szDATABASE_IP_URL_Cat[50 + 1] = {0};
+		char szDATABASE_Cat[50 + 1] = {0};
+		char szSID_Cat[50 + 1] = {0};
+		char szPASSWORD_Cat[50 + 1] = {0};
+
+		GetPrivateProfileString(DATABASE_SESSION, "DATABASE_IP_URL", DATABASE_IP_URL, szDATABASE_IP_URL_Cat, sizeof(szDATABASE_IP_URL_Cat), PARAINI);
+		GetPrivateProfileString(DATABASE_SESSION, "DATABASE", DATABASE, szDATABASE_Cat, sizeof(szDATABASE_Cat), PARAINI);
+		GetPrivateProfileString(DATABASE_SESSION, "SID", SID, szSID_Cat, sizeof(szSID_Cat), PARAINI);
+		GetPrivateProfileString(DATABASE_SESSION, "PASSWORD", PASSWORD, szPASSWORD_Cat, sizeof(szPASSWORD_Cat), PARAINI);
+
+		if (tempDb.DBConnect(szPASSWORD_Cat, szSID_Cat, szDATABASE_Cat, szDATABASE_IP_URL_Cat)) {
+			if (tempDb.GetCategoryByDnis(pScenario->szDnis, szServoceName, sizeof(szServoceName)) > 0) {
+				// SERVOCE_NAME 값 검증 및 적용 (DB에 영문 값 저장됨)
+				if (strcmp(szServoceName, "SERVICE") == 0 ||
+				    strcmp(szServoceName, "EDUCATION") == 0 ||
+				    strcmp(szServoceName, "TABLET") == 0) {
+					// 유효한 값 → 직접 적용
+					strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+					          szServoceName, sizeof(pScenario->m_szCategoryId) - 1);
+					xprintf("[CH:%03d] DNIS 카테고리 적용: %s", ch, szServoceName);
+				}
+				else {
+					// 알 수 없는 값 → SERVICE 기본값
+					strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+					          "SERVICE", sizeof(pScenario->m_szCategoryId) - 1);
+					xprintf("[CH:%03d] DNIS 카테고리: 알 수 없는 값(%s) -> SERVICE 기본값", ch, szServoceName);
+				}
+			}
+			else {
+				// DB 조회 실패 → 폴백 처리
+				char szFallback[8] = {0};
+				GetPrivateProfileStringA("CATEGORY_SOURCE", "CATEGORY_FALLBACK_TO_API", "true",
+				                         szFallback, sizeof(szFallback), PARAINI);
+
+				if (_stricmp(szFallback, "true") == 0) {
+					// API 값으로 복원
+					strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+					          szApiCategoryBackup, sizeof(pScenario->m_szCategoryId) - 1);
+					xprintf("[CH:%03d] DNIS 조회 실패 -> API 값으로 폴백: %s", ch, pScenario->m_szCategoryId);
+				}
+				else {
+					// SERVICE 기본값
+					strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId),
+					          "SERVICE", sizeof(pScenario->m_szCategoryId) - 1);
+					xprintf("[CH:%03d] DNIS 조회 실패 -> SERVICE 기본값", ch);
+				}
+			}
+			tempDb.ConClose();
+		}
+		else {
+			xprintf("[CH:%03d] DNIS 카테고리 조회용 DB 연결 실패", ch);
+			// DB 연결 실패 시 기존 API 값 유지
+		}
+
+		// A/B 비교 로그
+		xprintf("[CH:%03d] 카테고리 비교: API=%s, DNIS=%s, 최종=%s",
+		        ch, szApiCategoryBackup, szServoceName, pScenario->m_szCategoryId);
+	}
+	// ================================================================
+
 	// 구매 제한/상태 정보
 	strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag),
 			  plInfo.purchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag) - 1);

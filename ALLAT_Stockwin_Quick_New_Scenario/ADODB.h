@@ -70,6 +70,8 @@ public:
 	//AHN 20240630 개인정보보호
 	int      sp_getAllatOrderInfoByOrderNo(CString szDnis, CString szInputOrderNumber);
 
+	// 2026-01-27 DNIS 기반 카테고리 조회 (COMMON_DNIS_INFO.SERVOCE_NAME)
+	int      GetCategoryByDnis(CString szDnis, char* szCategoryOut, int nCategorySize);
 
 	BOOL     setPayLog(Card_ResInfo ag_Card_ResInfo);
 	BOOL     upOrderPayState(char *sxResultCode, char *szResultMsg, char *szMoid, char *szMid);

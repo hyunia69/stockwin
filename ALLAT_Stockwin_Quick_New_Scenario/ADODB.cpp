@@ -1641,6 +1641,78 @@ int CADODB::sp_getAllatOrderInfoByOrderNo(CString szDnis, CString szInputOrderNu
 	}
 }
 
+// ============================================================================
+// 2026-01-27 DNIS 기반 카테고리 조회 (COMMON_DNIS_INFO.SERVOCE_NAME)
+// ============================================================================
+int CADODB::GetCategoryByDnis(CString szDnis, char* szCategoryOut, int nCategorySize)
+{
+	if (szCategoryOut == NULL || nCategorySize <= 0) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: Invalid output buffer", m_pScenario->nChan) : xprintf("GetCategoryByDnis: Invalid output buffer");
+		return 0;
+	}
+
+	// 출력 버퍼 초기화
+	memset(szCategoryOut, 0x00, nCategorySize);
+
+	if (!GetDBCon()) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: DB 연결 실패", m_pScenario->nChan) : xprintf("GetCategoryByDnis: DB 연결 실패");
+		return 0;
+	}
+
+	try {
+		CString strQuery;
+		strQuery.Format(
+			"SELECT SERVOCE_NAME FROM COMMON_DNIS_INFO "
+			"WHERE ARS_DNIS = '%s' AND USE_YN = 'Y'",
+			szDnis.GetString()
+		);
+
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: Query=%s", m_pScenario->nChan, strQuery.GetString()) : xprintf("GetCategoryByDnis: Query=%s", strQuery.GetString());
+
+		if (!Open(strQuery.GetBuffer())) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: 쿼리 실행 실패", m_pScenario->nChan) : xprintf("GetCategoryByDnis: 쿼리 실행 실패");
+			return 0;
+		}
+
+		int nRecCount = GetRecCount();
+		if (nRecCount <= 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: DNIS=%s 조회 결과 없음 (count=%d)", m_pScenario->nChan, szDnis.GetString(), nRecCount) : xprintf("GetCategoryByDnis: DNIS=%s 조회 결과 없음 (count=%d)", szDnis.GetString(), nRecCount);
+			RSClose();
+			return 0;
+		}
+
+		_bstr_t bstrServoceName;
+		if (GetRs(_variant_t(L"SERVOCE_NAME"), bstrServoceName) != 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: SERVOCE_NAME 필드 조회 실패", m_pScenario->nChan) : xprintf("GetCategoryByDnis: SERVOCE_NAME 필드 조회 실패");
+			RSClose();
+			return 0;
+		}
+
+		if (bstrServoceName.length() == 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: SERVOCE_NAME이 NULL 또는 빈 값", m_pScenario->nChan) : xprintf("GetCategoryByDnis: SERVOCE_NAME이 NULL 또는 빈 값");
+			RSClose();
+			return 0;
+		}
+
+		// 결과 복사
+		strncpy_s(szCategoryOut, nCategorySize, (char*)bstrServoceName, nCategorySize - 1);
+
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: DNIS=%s, SERVOCE_NAME=%s", m_pScenario->nChan, szDnis.GetString(), szCategoryOut) : xprintf("GetCategoryByDnis: DNIS=%s, SERVOCE_NAME=%s", szDnis.GetString(), szCategoryOut);
+
+		RSClose();
+		return 1;
+
+	} catch (_com_error &e) {
+		PrintComError(e);
+		RSClose();
+		return 0;
+	} catch (...) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetCategoryByDnis: Unknown exception", m_pScenario->nChan) : xprintf("GetCategoryByDnis: Unknown exception");
+		RSClose();
+		return 0;
+	}
+}
+
 int CADODB::RegOrderInfo(INFOPRODOCREQ infoReq, INFOPRODOCRES infoOrder)
 {
 	if (ISOpen())
