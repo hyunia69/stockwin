@@ -1584,11 +1584,34 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 					"서비스 중도해지 시 해지일까지 이용요금과 해지수수료 10퍼센트와 "
 					"제공받으신 사은품 정가가 함께 차감됩니다.");
 
-				// 쿠폰/보너스캐시 사용 시 소멸 안내 추가
-				if (bCoupon || bBonusCash) {
-					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰/보너스캐시 사용 -> 소멸 안내 추가", localCh);
-					strcat_s(szTermsMent, sizeof(szTermsMent),
-						" 또한 적용된 쿠폰 및 보너스 캐시는 해지 시 소멸됩니다.");
+				// 쿠폰/보너스캐시 사용 시 소멸 안내 추가 (3분기)
+				if (bCoupon && bBonusCash) {
+					// 쿠폰 + 보너스캐시 둘 다 있는 경우
+					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰+보너스캐시 사용 -> 소멸 안내 추가", localCh);
+					char szExpireMent[256] = {0};
+					sprintf_s(szExpireMent, sizeof(szExpireMent),
+						" 또한, 자동 결제 시 적용되는 %s 쿠폰과 보너스캐시 %d원은 소멸됨을 알려드립니다.",
+						pScenario->m_szCouponName,
+						pScenario->m_nBonusCashUseAmt);
+					strcat_s(szTermsMent, sizeof(szTermsMent), szExpireMent);
+				}
+				else if (bCoupon) {
+					// 쿠폰만 있는 경우
+					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰만 사용 -> 소멸 안내 추가", localCh);
+					char szExpireMent[256] = {0};
+					sprintf_s(szExpireMent, sizeof(szExpireMent),
+						" 또한, 자동 결제 시 적용되는 %s 쿠폰이 소멸됨을 알려드립니다.",
+						pScenario->m_szCouponName);
+					strcat_s(szTermsMent, sizeof(szTermsMent), szExpireMent);
+				}
+				else if (bBonusCash) {
+					// 보너스캐시만 있는 경우
+					xprintf("[CH:%03d] ALLAT_getOrderInfo: 보너스캐시만 사용 -> 소멸 안내 추가", localCh);
+					char szExpireMent[256] = {0};
+					sprintf_s(szExpireMent, sizeof(szExpireMent),
+						" 또한, 자동 결제 시 적용되는 %d원 보너스캐시는 소멸됨을 알려드립니다.",
+						pScenario->m_nBonusCashUseAmt);
+					strcat_s(szTermsMent, sizeof(szTermsMent), szExpireMent);
 				}
 			}
 

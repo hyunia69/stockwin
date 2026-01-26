@@ -1,15 +1,21 @@
 # DASAM STOCKWIN ARS 일반결제 시나리오 분석
 
+**문서 버전**: 2.0
+**최종 수정일**: 2026-01-26
+**목적**: ALLAT_Stockwin_Quick_New_Scenario 기반 일반결제 ARS 시나리오 분석
+
+---
+
 ## 1. 개요
 
 **ALLAT_Stockwin_Quick_New_Scenario**는 한국경제TV(WowTV) 신용카드 결제 연동 ARS 시나리오 DLL입니다.
-ISDN PRI E1 회선 기반 ARS 시스템에서 고객의 음성 입력을 통한 신용카드 결제를 처리합니다.
+ISDN PRI E1 회선 기반 ARS 시스템에서 고객의 음성 입력을 통한 신용카드 일반결제를 처리합니다.
 
 ### 핵심 컴포넌트 구조
 
 ```
 IScenario (인터페이스)
-    └── CALLAT_WOWTV_Billkey_Easy_Scenario (메인 시나리오 클래스)
+    └── CALLAT_Hangung_Quick_Scenario (메인 시나리오 클래스)
             ├── CADODB (MS SQL Server ADO 데이터베이스 연결)
             ├── PayLetterAPI (REST API - 주문정보 조회)
             │       └── PL_GetPaymentInfo() - JSON 기반 HTTP/SSL 통신
@@ -17,6 +23,15 @@ IScenario (인터페이스)
 ```
 
 > **Note**: 기존 `CWowTvSocket` (TCP 소켓 통신)은 `PayLetterAPI` REST API로 대체되었습니다.
+
+### 문서 범위
+
+| 포함 | 제외 |
+|------|------|
+| ✅ 일반결제 시나리오 | ❌ 정기결제 시나리오 |
+| ✅ 쿠폰/보너스캐시 처리 | ❌ 간편결제(빌키) 시나리오 |
+| ✅ 상품유형별 안내 (SERVICE/TABLET/EDUCATION) | ❌ 빌키 발급/등록 프로세스 |
+| ✅ 투자 유의사항 안내 | |
 
 ---
 
@@ -26,7 +41,7 @@ IScenario (인터페이스)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         ARS 결제 시나리오 흐름                           │
+│                         ARS 일반결제 시나리오 흐름                         │
 │                    (ANI 자동 인식 - 전화번호 입력 불필요)                  │
 └─────────────────────────────────────────────────────────────────────────┘
 
@@ -34,44 +49,84 @@ IScenario (인터페이스)
     │           (예: DNIS=6690, ANI=01024020684)
     ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_CIAScenarioStart [0]   │ → 인사말 재생
+│ ALLAT_CIP_ScenarioStart [0]              │ → 인사말 재생
 │ 인사말: wownet_intro.wav                  │   "안녕하세요, 와우넷 결제 안내입니다"
+│ (코드: ALLAT_Stockwin_Quick_New_Scenario.cpp:2070-2084)
 └────────┬─────────────────────────────────┘
          │ POST_PLAY
+         ▼
+┌──────────────────────────────────────────┐
+│ ALLAT_CIP_ScenarioStart [1]              │ ← ANI 휴대폰 검증
+│ ANI가 휴대폰인 경우 → API 호출           │
+│ ANI가 휴대폰 아닌 경우 → 전화번호 입력 요청 │
+│ (코드: 2087-2103)
+└────────┬─────────────────────────────────┘
+         │
          ▼
 ┌──────────────────────────────────────────┐
 │ PayLetter REST API 호출                   │ ← [주문정보 조회]
 │ PL_InfoOrderReq_Process()                 │
 │ URL: devswbillapi.wowtv.co.kr             │
 │      /v1/payment/simple/getpaymentinfo_V2 │
+│ (코드: WowTvSocket.cpp:1030-1149)
 └────────┬─────────────────────────────────┘
          │ 주문정보 수신 완료
          ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_getOrderInfo [0~10]    │ → TTS 주문정보 안내
-│ (고객명, 가맹점명, 상품명, 금액)           │   "고객님 SW2637262148, 상품 xxx, 금액 20,000원"
+│ ALLAT_getOrderInfo [0]                    │ → 주문정보 검증
+│ 시스템 장애/주문정보 없음/와우캐시 결제 체크 │
+│ (코드: 1373-1420)
 └────────┬─────────────────────────────────┘
-         │ POST_DTMF
+         │ 정상
          ▼
 ┌──────────────────────────────────────────┐
-│ 결제진행 확인 (1=예, 2=취소)              │ ← DTMF 입력 대기
+│ ALLAT_getOrderInfo [0] → TTS             │ → 정보제공 동의 안내
+│ "한국경제TV를 통해 제공되는...정보제공에    │
+│  동의하시겠습니까? 1번=동의, 2번=미동의"   │
+│ (코드: 1425-1433)
 └────────┬─────────────────────────────────┘
-         │ '1' 입력
+         │ POST_NET → POST_DTMF
          ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_CardInput [0~3]        │ → "카드번호 16자리를 눌러주세요"
+│ ALLAT_getOrderInfo [2]                    │ ← DTMF 입력 대기
+│ 1=동의 → state 9로 이동                   │
+│ 2=미동의 → 시나리오 재시작                │
+│ (코드: 1465-1491)
+└────────┬─────────────────────────────────┘
+         │ '1' 입력 (동의)
+         ▼
+┌──────────────────────────────────────────┐
+│ ALLAT_getOrderInfo [9]                    │ → TTS 결제정보 안내
+│ ★ 결제금액 안내 (4분기)                   │
+│ ★ 상품유형별 해지조건 안내                │
+│ ★ 투자 유의사항 안내                      │
+│ ★ 동의 확인 멘트                          │
+│ (코드: 1492-1627)
+└────────┬─────────────────────────────────┘
+         │ POST_NET → POST_DTMF
+         ▼
+┌──────────────────────────────────────────┐
+│ ALLAT_getOrderInfo [12]                   │ ← DTMF 입력 대기
+│ 1=결제진행 → 카드입력                     │
+│ 2=취소 → 시나리오 재시작                  │
+│ (코드: 1664-1690)
+└────────┬─────────────────────────────────┘
+         │ '1' 입력 (결제진행)
+         ▼
+┌──────────────────────────────────────────┐
+│ ALLAT_CardInput [0~3]                     │ → "카드번호 16자리를 눌러주세요"
 │ 카드번호 입력 (13~16자리)                 │
 └────────┬─────────────────────────────────┘
          │ POST_DTMF
          ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_EffecDate [0~3]        │ → "유효기간 월2자리, 년도2자리"
+│ ALLAT_EffecDate [0~3]                     │ → "유효기간 월2자리, 년도2자리"
 │ 유효기간 입력 (MMYY 4자리)                │
 └────────┬─────────────────────────────────┘
          │ POST_DTMF
          ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_InstallmentCConfrim    │ → "일시불은 1번, 할부는 2번"
+│ ALLAT_InstallmentCConfrim                 │ → "일시불은 1번, 할부는 2번"
 │ 할부 선택 (1=일시불, 2=할부개월 입력)      │
 └────────┬─────────────────────────────────┘
          │ '1' 또는 할부개월 입력
@@ -89,7 +144,7 @@ IScenario (인터페이스)
          │
          ▼
 ┌──────────────────────────────────────────┐
-│ ALLAT_WOWTV_Quick_payARS [0]             │ → 결과 안내
+│ ALLAT_payARS [0]                          │ → 결과 안내
 │ 성공: "결제가 완료되었습니다. 승인번호 xxx" │
 │ 실패: pay_fail_msg.wav 에러 안내           │
 └────────┬─────────────────────────────────┘
@@ -101,74 +156,239 @@ IScenario (인터페이스)
 └──────────────────────────────────────────┘
 ```
 
-### 2.2 인증타입별 카드정보 입력 흐름
+### 2.2 ALLAT_getOrderInfo 상태 머신 상세
 
-| 인증타입 | 코드 | 입력 순서 |
-|----------|------|-----------|
-| 비인증 | 01 | 카드번호 → 유효기간 → 할부개월 → 결제 |
-| 구인증 | 02 | 카드번호 → 유효기간 → 생년월일 → 할부개월 → 비밀번호 → 결제 |
-| 부분인증 | 03 | 카드번호 → 유효기간 → 생년월일 → 할부개월 → 결제 |
-| 빌키 비인증 | 41 | 빌키 동의 → (동의시 빌키발급) → 결제 |
-| 빌키 구인증 | 42 | 빌키 동의 → 비밀번호 → (동의시 빌키발급) → 결제 |
-| 빌키 부분인증 | 43 | 빌키 동의 → (동의시 빌키발급) → 결제 |
+`ALLAT_getOrderInfo()` 함수는 주문정보 조회 후 결제 동의를 받는 핵심 함수입니다.
 
-### 2.3 카드정보 입력 상태 머신
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1356-1720`
 
 ```
-┌─ ALLAT_CardInput (카드번호 입력)
-│   ├─ State 0: "카드번호 16자리를 눌러주세요" 음성안내
-│   ├─ State 1: DTMF 16자리 수집, 유효성 검사
-│   │           - Luhn 알고리즘 체크
-│   │           - 13~16자리 허용
-│   └─ State 2: ALLAT_EffecDate(0) → 유효기간 입력으로 전이
-│
-├─ ALLAT_EffecDate (유효기간 입력)
-│   ├─ State 0: "유효기간 월 2자리, 년도 2자리를 눌러주세요" 음성안내
-│   ├─ State 1: DTMF 4자리 수집 (MMYY 형식)
-│   │           - 월 01~12 범위 검증
-│   │           - 만료 여부 검사
-│   └─ State 2: 인증타입 확인
-│               ├─ 01(비인증) → ALLAT_InstallmentCConfrim (할부선택)
-│               ├─ 02(구인증) → ALLAT_JuminNo (생년월일 입력)
-│               └─ 03(부분인증) → ALLAT_JuminNo (생년월일 입력)
-│
-├─ ALLAT_JuminNo (생년월일/법인번호 입력)
-│   ├─ State 0: "생년월일 6자리를 눌러주세요" 음성안내
-│   ├─ State 1: DTMF 6자리 수집 (YYMMDD 형식)
-│   │           - 날짜 유효성 검증
-│   └─ State 2: 인증타입 확인
-│               ├─ 02(구인증) → ALLAT_CardPw (비밀번호 입력)
-│               └─ 03(부분인증) → ALLAT_InstallmentCConfrim (할부선택)
-│
-├─ ALLAT_CardPw (비밀번호 앞2자리 입력)
-│   ├─ State 0: "카드 비밀번호 앞 2자리를 눌러주세요" 음성안내
-│   ├─ State 1: DTMF 2자리 수집
-│   └─ State 2: ALLAT_InstallmentCConfrim (할부선택)
-│
-├─ ALLAT_InstallmentCConfrim (할부개월 선택)
-│   ├─ State 0: "일시불은 1번, 할부는 2번을 눌러주세요" 음성안내
-│   ├─ State 1-1: '1' → 일시불(00) 설정
-│   └─ State 1-2: '2' → ALLAT_Installment (할부개월 입력)
-│
-├─ ALLAT_Installment (할부개월 입력)
-│   ├─ State 0: "할부개월 2자리를 눌러주세요" 음성안내
-│   ├─ State 1: DTMF 2자리 수집 (02~12)
-│   └─ State 2: 최종 결제 확인으로 전이
-│
-└─ ALLAT_consent (빌키 동의 확인) - 41~43 인증타입 전용
-    ├─ State 0: "간편결제 등록에 동의하시면 1번, 미동의시 2번" 음성안내
-    └─ State 1:
-        ├─ '1'(동의) → Allat_Get_FixKey_host(90) [빌키 발급]
-        └─ '2'(미동의) → AllatPaymemt_host(90) [일반결제]
+┌─────────────────────────────────────────────────────────────────┐
+│                   ALLAT_getOrderInfo 상태 머신                    │
+└─────────────────────────────────────────────────────────────────┘
+
+[State 0] 주문정보 검증
+    │
+    ├─ m_DBAccess == -1 또는 m_bDnisInfo == -1 → 시스템 장애 안내 → 종료
+    ├─ m_bDnisInfo < 0 → 송수신 에러 안내 → 종료
+    ├─ m_bDnisInfo == 0 → 주문정보 없음 안내 → 종료
+    ├─ m_szretval == "6020" → 와우캐시 결제완료 → State 20
+    └─ 정상 → 정보제공 동의 TTS 재생 → State 1
+
+[State 1] TTS 재생 완료 대기
+    └─ TTS 파일 재생 → State 2 (DTMF 입력 대기)
+
+[State 2] 정보제공 동의 DTMF 입력
+    ├─ '1' (동의) → State 9 (결제정보 안내)
+    └─ '2' (미동의) → 시나리오 재시작
+
+[State 9] ★ 결제정보 TTS 안내 (핵심)
+    │
+    ├─ 결제금액 안내 (4분기)
+    ├─ 상품유형별 해지조건 안내
+    ├─ 투자 유의사항 안내
+    └─ 동의 확인 멘트 → State 10
+
+[State 10] TTS 재생 완료 대기
+    └─ TTS 파일 재생 → State 12 (DTMF 입력 대기)
+
+[State 12] 결제진행 동의 DTMF 입력
+    ├─ '1' (동의) → ALLAT_CardInput(0) 카드입력 진행
+    └─ '2' (취소) → 시나리오 재시작
+
+[State 20] 와우캐시 결제완료 안내
+    └─ TTS 재생 → 종료
 ```
 
 ---
 
-## 3. API 정리
+## 3. 결제정보 TTS 안내 (State 9)
 
-### 3.1 주문정보 조회 API (PayLetter REST API)
+### 3.1 TTS 멘트 구성 (4부 구조)
 
-#### 함수: `PL_InfoOrderReq_Process()` (PayLetterAPI.cpp)
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1492-1620`
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      TTS 멘트 4부 구성                           │
+├─────────────────────────────────────────────────────────────────┤
+│ 1부: 결제금액 안내 (szPaymentMent) - 4분기                       │
+│ 2부: 상품유형별 해지조건 안내 (szTermsMent) - 3가지 타입          │
+│ 3부: 투자 유의사항 안내 (szInvestMent) - 고정 멘트               │
+│ 4부: 동의 확인 멘트 (szConfirmMent) - 고정 멘트                  │
+└─────────────────────────────────────────────────────────────────┘
+
+최종 멘트 = szPaymentMent + szTermsMent + szInvestMent + szConfirmMent
+```
+
+### 3.2 결제금액 안내 (4분기)
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1503-1556`
+
+| 분기 조건 | 변수 조합 | TTS 멘트 |
+|-----------|-----------|----------|
+| **할인 없음** | bCoupon=false, bBonusCash=false | `[고객명] 고객님, [가맹점명]에서, 주문하신 [상품명]의 결제하실 금액은 [금액]원입니다.` |
+| **쿠폰만 적용** | bCoupon=true, bBonusCash=false | `... [고객명]님께서 보유하신 [쿠폰명] 쿠폰이 적용되어 최종 결제 금액은 [금액]원입니다.` |
+| **보너스캐시만 적용** | bCoupon=false, bBonusCash=true | `... [고객명]님께서 보유하신 보너스 캐시 [금액]원이 적용되어 최종 결제 금액은 [금액]원입니다.` |
+| **둘 다 적용** | bCoupon=true, bBonusCash=true | `... [고객명]님께서 보유하신 [쿠폰명] 쿠폰과 보너스 캐시 [금액]원이 적용되어 최종 결제 금액은 [금액]원입니다.` |
+
+**분기 조건 코드**:
+```cpp
+bool bCoupon = (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 &&
+                strlen(pScenario->m_szCouponName) > 0);
+bool bBonusCash = (pScenario->m_nBonusCashUseAmt > 0);
+```
+
+### 3.3 상품유형별 해지조건 안내
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1567-1593`
+
+| 상품유형 (m_szCategoryId) | TTS 멘트 |
+|---------------------------|----------|
+| **SERVICE** (기본값) | 서비스 중도해지 시 해지일까지 이용요금과 해지수수료 10퍼센트와 제공받으신 사은품 정가가 함께 차감됩니다. |
+| **TABLET** | 박스 개봉 후 제품 불량을 제외하고는 교환 및 반품이 불가합니다. |
+| **EDUCATION** | 본 상품은 교육 상품으로 결제 후 해지가 불가능합니다. 또한, 무료로 제공되는 서비스는 중도 해지 및 일시 정지 파일 양도가 불가합니다. |
+
+**상품유형 정규화 로직** (WowTvSocket.cpp:1107-1117):
+```cpp
+// TABLET, EDUCATION 외에는 모두 SERVICE로 정규화
+if (strcmp(plInfo.categoryId_2nd, "TABLET") == 0 ||
+    strcmp(plInfo.categoryId_2nd, "EDUCATION") == 0) {
+    strncpy_s(pScenario->m_szCategoryId, plInfo.categoryId_2nd);
+} else {
+    strncpy_s(pScenario->m_szCategoryId, "SERVICE");
+}
+```
+
+### 3.4 쿠폰/보너스캐시 소멸 안내 (3분기)
+
+**조건**: 일반상품(SERVICE)이면서 쿠폰 또는 보너스캐시 사용 시에만 추가
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1587-1615`
+
+| 분기 조건 | TTS 멘트 |
+|-----------|----------|
+| **쿠폰 + 보너스캐시 둘 다** | `또한, 자동 결제 시 적용되는 [쿠폰명] 쿠폰과 보너스캐시 [금액]원은 소멸됨을 알려드립니다.` |
+| **쿠폰만 적용** | `또한, 자동 결제 시 적용되는 [쿠폰명] 쿠폰이 소멸됨을 알려드립니다.` |
+| **보너스캐시만 적용** | `또한, 자동 결제 시 적용되는 [금액]원 보너스캐시는 소멸됨을 알려드립니다.` |
+
+```cpp
+// 쿠폰/보너스캐시 사용 시 소멸 안내 추가 (3분기)
+if (bCoupon && bBonusCash) {
+    // 쿠폰 + 보너스캐시 둘 다 있는 경우
+    sprintf_s(szExpireMent, " 또한, 자동 결제 시 적용되는 %s 쿠폰과 보너스캐시 %d원은 소멸됨을 알려드립니다.",
+        pScenario->m_szCouponName, pScenario->m_nBonusCashUseAmt);
+}
+else if (bCoupon) {
+    // 쿠폰만 있는 경우
+    sprintf_s(szExpireMent, " 또한, 자동 결제 시 적용되는 %s 쿠폰이 소멸됨을 알려드립니다.",
+        pScenario->m_szCouponName);
+}
+else if (bBonusCash) {
+    // 보너스캐시만 있는 경우
+    sprintf_s(szExpireMent, " 또한, 자동 결제 시 적용되는 %d원 보너스캐시는 소멸됨을 알려드립니다.",
+        pScenario->m_nBonusCashUseAmt);
+}
+```
+
+| 상품유형 | 할인 적용 | 소멸 안내 포함 |
+|----------|-----------|----------------|
+| SERVICE | 쿠폰+보너스캐시 | ✅ 포함 (쿠폰명+금액 언급) |
+| SERVICE | 쿠폰만 사용 | ✅ 포함 (쿠폰명 언급) |
+| SERVICE | 보너스캐시만 사용 | ✅ 포함 (금액 언급) |
+| SERVICE | 할인 없음 | ❌ 미포함 |
+| TABLET | 쿠폰/보너스캐시 사용 | ❌ 미포함 |
+| EDUCATION | 쿠폰/보너스캐시 사용 | ❌ 미포함 |
+
+### 3.5 투자 유의사항 안내 (고정 멘트)
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1598-1601`
+
+> 또한, 한국경제티비와, 파트너는, 금융투자업자가 아닌, 유사투자자문업자로, 개별적인 투자 상담과 자금 운영이 불가하며, 원금 손실이 발생할 수 있고, 그 손실은 투자자에게 귀속됩니다.
+
+### 3.6 동의 확인 멘트 (고정 멘트)
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.cpp:1606-1607`
+
+> 동의 및 결제하시려면 1번을, 취소하시려면 2번을 눌러주세요.
+
+---
+
+## 4. 데이터 구조
+
+### 4.1 주요 멤버 변수 (ALLAT_Stockwin_Quick_New_Scenario.h)
+
+**코드 위치**: `ALLAT_Stockwin_Quick_New_Scenario.h:17-122`
+
+#### 기본 정보
+| 변수명 | 타입 | 설명 |
+|--------|------|------|
+| `m_szMx_issue_no` | char[81] | 주문번호 |
+| `m_szMx_id` | char[33] | 가맹점 ID |
+| `m_szMx_name` | char[51] | 가맹점명 |
+| `m_szCC_name` | char[65] | 고객명/닉네임 |
+| `m_szCC_Prod_Desc` | char[256] | 상품명 |
+| `m_nAmount` | int | 결제금액 (할인 후) |
+| `m_szpsrtner_nm` | char[257] | 파트너명 |
+
+#### 쿠폰/보너스캐시 (신규 추가)
+| 변수명 | 타입 | 설명 |
+|--------|------|------|
+| `m_szCouponUseFlag` | char[2] | 쿠폰 사용 여부 (Y/N) |
+| `m_szCouponName` | char[51] | 쿠폰명 |
+| `m_szBonusCashUseFlag` | char[2] | 보너스캐시 사용 여부 (Y/N) |
+| `m_nBonusCashUseAmt` | int | 보너스캐시 금액 |
+| `m_nPurchaseAmt` | int | 할인 전 원가 |
+
+#### 상품유형
+| 변수명 | 타입 | 설명 |
+|--------|------|------|
+| `m_szCategoryId` | char[17] | 상품유형 (SERVICE/TABLET/EDUCATION) |
+
+#### 구매 제한/상태
+| 변수명 | 타입 | 설명 |
+|--------|------|------|
+| `m_szPurchaseLimitFlag` | char[2] | 구매 제한 상태 (1=정상, 2=불량, 3=횟수초과, 4=시작전, 5=종료, 6=중지) |
+| `m_szPgCode` | char[2] | PG 코드 (A=올앳, P=페이레터) |
+| `m_nMemberState` | int | 고객상태 (1=비회원, 2=유료회원, 3=기구매자) |
+| `m_szServiceCheckFlag` | char[2] | 서비스 점검 여부 (Y/N) |
+
+### 4.2 카드 정보 구조체
+
+```cpp
+typedef struct CarsInfo {
+    char Card_Num[16+1];     // 카드번호 (16자리)
+    char ExpireDt[4+1];      // 유효기간 (MMYY)
+    char SecretNo[10+1];     // 생년월일/법인번호
+    char Password[2+1];      // 비밀번호 앞2자리
+    char InstPeriod[2+1];    // 할부개월 (00=일시불)
+} CARDINFO;
+```
+
+### 4.3 결제 응답 구조체
+
+```cpp
+typedef struct Card_ResInfo {
+    char m_Tid[50+1];           // 거래번호 (ALLAT TID)
+    char m_szRESULTCODE[10+1];  // 결과코드 (0000=성공)
+    char m_szRESULTMSG[200+1];  // 결과메시지
+    char m_AUTHCODE[10+1];      // 승인번호
+    char m_AUTHDATE[12+1];      // 승인일시 (YYMMDDHHmmss)
+    char m_szMoid[80+1];        // 주문번호
+    char m_szCardNo[18+1];      // 카드번호 (마스킹됨)
+    char m_AMT[12+1];           // 승인금액
+    char m_CARD_NM[30+1];       // 카드사명
+    char m_INSTALLMENT[2+1];    // 할부개월
+} Card_ResInfo;
+```
+
+---
+
+## 5. API 정리
+
+### 5.1 주문정보 조회 API (PayLetter REST API)
+
+#### 함수: `PL_InfoOrderReq_Process()` (WowTvSocket.cpp:1030-1149)
 
 **호출 방식**: HTTP/SSL POST (JSON)
 
@@ -212,11 +432,11 @@ Authorization: BASIC {signature}
     "mallIdSimple": "T_arsstockwin1",
     "mallIdGeneral": "T_arsstockwin",
     "payAmt": 20000,
-    "CouponUseFlag": "N",
-    "CouponName": "",
+    "CouponUseFlag": "Y",
+    "CouponName": "정액 50%할인 쿠폰",
     "BonusCashUseFlag": "Y",
-    "BonusCashUseAmt": 0,
-    "purchaseAmt": 20000,
+    "BonusCashUseAmt": 5000,
+    "purchaseAmt": 30000,
     "notiUrlSimple": "http://devswbilluser.wowtv.co.kr/Fillup/Allat/AllatCallBack",
     "notiUrlGeneral": "http://devswbilluser.wowtv.co.kr/Fillup/Allat/AllatCallBack",
     "billKey": "",
@@ -236,41 +456,23 @@ Authorization: BASIC {signature}
 | API 필드 | 시나리오 변수 | 설명 |
 |----------|---------------|------|
 | merchantId | m_szMx_id | 가맹점 ID (mallIdGeneral 사용) |
-| - | m_szMx_name | 가맹점명 (DB 조회로 보충) |
-| nickName | m_szCC_name (buyer_nm) | 고객명/닉네임 |
+| nickName | m_szCC_name | 고객명/닉네임 |
 | itemName | m_szCC_prod_desc | 상품명 |
 | orderNo | m_szMx_issue_no | 주문번호 |
-| purchaseAmt | m_nAmount | 결제금액 |
-| pgCode | - | PG사 코드 (A=ALLAT) |
-| packageId | product_cd | 상품 코드 |
-| notiUrlGeneral | m_szSHOP_RET_URL | 결과 콜백 URL |
-| billKey | - | 기존 빌키 (간편결제용) |
-| payAgreeFlag | - | 결제 동의 여부 |
-
-**요청 흐름** (실제 로그 기반):
-```cpp
-// 1. PayLetter API 초기화
-PL_Initialize(isLive, appId, baseUrl);
-
-// 2. 주문정보 조회 API 호출
-PL_GetPaymentInfo(reqType, reqTypeVal, phoneNo, arsType);
-
-// 3. JSON 응답 파싱 및 시나리오 변수 설정
-pScenario->m_szMx_issue_no = orderNo;
-pScenario->m_nAmount = purchaseAmt;
-pScenario->m_szCC_name = nickName;
-// ...
-
-// 4. DB 보충 조회 (가맹점명 등)
-RegOrderInfo();
-sp_getAllatOrderInfoByOrderNo();
-```
-
-> **Note**: 기존 `Wow_InfoRodocReq_Process()` (TCP 소켓 + XML)는 `PL_InfoOrderReq_Process()` (REST API + JSON)로 대체되었습니다.
+| payAmt | m_nAmount | 결제금액 (할인 후) |
+| purchaseAmt | m_nPurchaseAmt | 할인 전 원가 |
+| CouponUseFlag | m_szCouponUseFlag | 쿠폰 사용 여부 |
+| CouponName | m_szCouponName | 쿠폰명 |
+| BonusCashUseFlag | m_szBonusCashUseFlag | 보너스캐시 사용 여부 |
+| BonusCashUseAmt | m_nBonusCashUseAmt | 보너스캐시 금액 |
+| categoryId_2nd | m_szCategoryId | 상품유형 (SERVICE/TABLET/EDUCATION으로 정규화) |
+| purchaseLimitFlag | m_szPurchaseLimitFlag | 구매 제한 상태 |
+| pgCode | m_szPgCode | PG 코드 |
+| memberState | m_nMemberState | 고객 상태 |
 
 ---
 
-### 3.2 결제 승인 API (ALLAT PG)
+### 5.2 결제 승인 API (ALLAT PG)
 
 #### 함수: `AllatArsPayProcess()` (ALLAT_Access.cpp)
 
@@ -278,7 +480,6 @@ sp_getAllatOrderInfoByOrderNo();
 
 **요청 파라미터**:
 ```cpp
-// ALLAT_ENCDATA 구조체에 설정
 setValue(atEnc, "allat_shop_id", szShopId);      // 가맹점 ID
 setValue(atEnc, "allat_order_no", szOrderNo);    // 주문번호
 setValue(atEnc, "allat_amt", szAmt);             // 결제금액
@@ -290,439 +491,117 @@ setValue(atEnc, "allat_card_expiry", szCardValidYm); // 유효기간
 setValue(atEnc, "allat_card_pwd", szPasswordNo); // 비밀번호 앞2자리
 setValue(atEnc, "allat_auth_no", szJuminNo);     // 생년월일/법인번호
 setValue(atEnc, "allat_sellmm", szSellMm);       // 할부개월
-setValue(atEnc, "allat_enc_data", encryptedData);// 암호화 데이터
-```
-
-**API 호출**:
-```cpp
-ApprovalReq(at_data, "SSL", sMsg);  // 승인 요청 전송
-```
-
-**응답 파싱**:
-```cpp
-getValue("reply_cd=", sMsg, sReplyCd, ...);       // 결과코드 (0000=성공)
-getValue("reply_msg=", sMsg, sReplyMsg, ...);     // 결과메시지
-getValue("approval_no=", sMsg, sApprovalNo, ...); // 승인번호
-getValue("auth_date=", sMsg, sApprovalYMDHMS, ...);// 승인일시
-getValue("tid=", sMsg, sTid, ...);                // 거래번호
-getValue("card_no=", sMsg, sCardNo, ...);         // 마스킹된 카드번호
-```
-
-**응답 저장 구조체** (Card_ResInfo):
-```cpp
-pScenario->m_CardResInfo.m_szRESULTCODE  // 결과코드
-pScenario->m_CardResInfo.m_szRESULTMSG   // 결과메시지
-pScenario->m_CardResInfo.m_AUTHCODE      // 승인번호
-pScenario->m_CardResInfo.m_AUTHDATE      // 승인일시
-pScenario->m_CardResInfo.m_Tid           // 거래번호
-pScenario->m_CardResInfo.m_szCardNo      // 카드번호(마스킹)
 ```
 
 ---
 
-### 3.3 빌키 발급 API (ALLAT PG)
+## 6. 인증타입별 카드정보 입력 흐름
 
-#### 함수: `Allat_Get_FixKey_Process()` (ALLAT_Access.cpp)
-
-**목적**: 간편결제용 빌키(Bill Key) 발급
-
-**요청 파라미터**:
-```cpp
-setValue(atEnc, "allat_fix_key", "");              // 빈값 (신규발급)
-setValue(atEnc, "allat_card_no", szCardNo);        // 카드번호
-setValue(atEnc, "allat_card_expiry", szCardValidYm);// 유효기간
-// 인증타입에 따라 추가 필드...
-```
-
-**응답 필드**:
-- `fix_key`: 발급된 빌키 (24자리)
-- `reply_cd`: 결과코드
-- `card_no`: 마스킹된 카드번호
-
----
-
-### 3.4 결제 취소 API (ALLAT PG)
-
-#### 함수: `AllatArsCancleProcess()` (ALLAT_Access.cpp)
-
-**요청 파라미터**:
-```cpp
-setValue(atEnc, "allat_shop_id", szShopId);
-setValue(atEnc, "allat_amt", szCancelAmt);         // 취소금액
-setValue(atEnc, "allat_tid", szTid);               // 원거래 TID
-setValue(atEnc, "allat_cancel_pwd", szCancelPwd);  // 취소비밀번호
-```
-
----
-
-## 4. DB 저장 (저장프로시저)
-
-### 4.1 ADODB 클래스 (ADODB.cpp)
-
-**데이터베이스 연결**:
-```cpp
-// 연결 문자열
-"Provider=SQLOLEDB;Data Source=서버주소;Initial Catalog=DB명;User Id=계정;Password=비번"
-```
-
-### 4.2 주요 저장프로시저
-
-#### 4.2.1 `upOrderPayState` - 결제 상태 업데이트
-
-**용도**: 주문의 결제상태를 '결제완료'로 변경
-
-```sql
-EXEC upOrderPayState
-    @orderId = '주문번호',
-    @paymentStatus = '결제완료',
-    @authCode = '승인번호',
-    @approvalDate = '승인일시',
-    @amount = 결제금액,
-    @tid = '거래번호'
-```
-
-**호출 위치**: 결제 승인 성공 후
-
----
-
-#### 4.2.2 `setPayLog` - 결제 로그 기록
-
-**용도**: 결제 결과를 로그 테이블에 기록 (감사/분석용)
-
-```sql
-EXEC setPayLog
-    @resultCode = '결과코드',
-    @resultMsg = '결과메시지',
-    @tid = '거래번호',
-    @orderId = '주문번호',
-    @amount = 결제금액,
-    @timestamp = '처리시간',
-    @cardNo = '카드번호(마스킹)',
-    @approvalNo = '승인번호'
-```
-
-**호출 위치**: 결제 승인 성공/실패 모두
-
----
-
-#### 4.2.3 `sp_getAllatOrderInfoByTel2` - 전화번호 기반 주문조회
-
-**용도**: 고객 입력 전화번호로 해당 주문정보 조회
-
-```sql
-EXEC sp_getAllatOrderInfoByTel2
-    @phoneNumber = '01012345678'
-
--- 출력: orderId, customerName, productName, amount, authType, ...
-```
-
-**호출 위치**: 주문정보 조회 시 (TCP 조회 실패 시 대체)
-
----
-
-#### 4.2.4 `RegOrderInfo` - 주문정보 등록
-
-**용도**: 신규 주문정보 등록
-
-**호출 위치**: 특정 시나리오에서 주문 생성 시
-
----
-
-## 5. 결과 URL 전송
-
-### 함수: `CreateAg()` / `Http_SSL_RetPageSend()`
-
-**용도**: 결제 완료 후 상점 서버로 결과 콜백
-
-```cpp
-// URL 플레이스홀더 치환
-szURL.Replace("{replyCd}", pScenario->m_CardResInfo.m_szRESULTCODE);
-szURL.Replace("{approvalNo}", pScenario->m_CardResInfo.m_AUTHCODE);
-szURL.Replace("{approvalAmt}", pScenario->m_CardResInfo.m_AMT);
-szURL.Replace("{approvalDate}", pScenario->m_CardResInfo.m_AUTHDATE);
-szURL.Replace("{tid}", pScenario->m_CardResInfo.m_Tid);
-szURL.Replace("{cardNo}", pScenario->m_CardResInfo.m_szCardNo);
-szURL.Replace("{orderId}", pScenario->m_szMx_issue_no);
-
-// 상점 서버로 전송
-Http_SSL_RetPageSend(data, szURL, "POST");
-```
-
----
-
-## 6. 핵심 데이터 구조체
-
-### 6.1 CARDINFO (카드 입력 정보)
-
-```cpp
-typedef struct CarsInfo {
-    char Card_Num[16+1];     // 카드번호 (16자리)
-    char ExpireDt[4+1];      // 유효기간 (MMYY)
-    char SecretNo[10+1];     // 생년월일/법인번호
-    char Password[2+1];      // 비밀번호 앞2자리
-    char InstPeriod[2+1];    // 할부개월 (00=일시불)
-    char Fix_Key[24+1];      // 빌키 (간편결제용)
-} CARDINFO;
-```
-
-### 6.2 Card_ResInfo (결제 승인 응답)
-
-```cpp
-typedef struct Card_ResInfo {
-    char m_Tid[50+1];           // 거래번호 (ALLAT TID)
-    char m_szRESULTCODE[10+1];  // 결과코드 (0000=성공)
-    char m_szRESULTMSG[200+1];  // 결과메시지
-    char m_AUTHCODE[10+1];      // 승인번호
-    char m_AUTHDATE[12+1];      // 승인일시 (YYMMDDHHmmss)
-    char m_szMoid[80+1];        // 주문번호
-    char m_szCardNo[18+1];      // 카드번호 (마스킹됨)
-    char m_AMT[12+1];           // 승인금액
-    char szBill_Key[24+1];      // 빌키 (발급된 경우)
-    char m_CARD_NM[30+1];       // 카드사명
-    char m_INSTALLMENT[2+1];    // 할부개월
-} Card_ResInfo;
-```
-
-### 6.3 INFOPRODOCREQ/RES (TCP 전문 구조체)
-
-```cpp
-#pragma pack(push, 1)  // 1바이트 정렬
-
-typedef struct {
-    char szDnis[20];       // 착신번호
-    char szPhoneNo[20];    // 고객전화번호
-    char szReserved[60];   // 예비
-} INFOPRODOCREQ;
-
-typedef struct {
-    char szResultCode[4];  // 결과코드
-    char szOrderNo[30];    // 주문번호
-    char szCustomerName[50];// 고객명
-    char szProductName[100];// 상품명
-    char szAmount[12];     // 금액
-    char szAuthType[2];    // 인증타입
-    // ... 추가 필드
-} INFOPRODOCRES;
-
-#pragma pack(pop)
-```
+| 인증타입 | 코드 | 입력 순서 |
+|----------|------|-----------
+| 비인증 | 01 | 카드번호 → 유효기간 → 할부개월 → 결제 |
+| 구인증 | 02 | 카드번호 → 유효기간 → 생년월일 → 할부개월 → 비밀번호 → 결제 |
+| 부분인증 | 03 | 카드번호 → 유효기간 → 생년월일 → 할부개월 → 결제 |
 
 ---
 
 ## 7. 에러 처리
 
-### 7.1 상태 코드 기반 에러 처리
-
-```cpp
-// 결제 API 호출 결과 확인
-if (pScenario->m_PaySysCd < 0) {
-    // 연동 실패
-    set_guide(399);  // "시스템 오류가 발생했습니다" 음성 안내
-    setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
-    return;
-}
-
-// ALLAT 응답 코드 확인
-if (strcmp(pScenario->m_CardResInfo.m_szRESULTCODE, "0000") != 0) {
-    // 승인 거부
-    // 에러코드별 안내 메시지 분기
-    ALLAT_ErrorProcess(pScenario->m_CardResInfo.m_szRESULTCODE);
-}
-```
-
-### 7.2 DTMF 입력 검증
-
-```cpp
-// 전화번호 검증
-if ((check_validform("*#:7:12", refinfo)) < 0) {
-    // 자릿수 오류
-    return send_error();  // 재입력 안내
-}
-
-// 010~019 시작 여부 확인
-if (strncmp(refinfo, "01", 2) != 0) {
-    return send_error();
-}
-```
-
-### 7.3 주요 에러 코드
+### 7.1 주요 에러 코드
 
 | 코드 | 설명 | 처리 |
 |------|------|------|
 | 0000 | 정상승인 | 성공 처리 |
-| 0001 | 카드번호 오류 | 재입력 안내 |
-| 0002 | 유효기간 오류 | 재입력 안내 |
-| 0003 | 한도초과 | 결제 불가 안내 |
-| 0004 | 분실/도난카드 | 결제 거부 안내 |
+| MB14 | 카드번호 오류 | 카드번호 재입력 요청 |
+| MA01 | 유효기간 오류 | 유효기간 재입력 요청 |
+| MA05 | 한도 초과 | 결제 불가 안내 |
 | 9999 | 시스템 오류 | 재시도 또는 종료 |
 
----
+### 7.2 주문정보 조회 에러
 
-## 8. 멀티스레드 처리 패턴
-
-### 8.1 비동기 호출 구조
-
-```cpp
-// 1. 호스트 앱에서 스레드 시작 요청
-getOrderInfo_host(90);  // 90 = 타임아웃(초)
-
-// 2. 별도 스레드 생성
-_beginthreadex(NULL, 0, Wow_InfoRodocReq_Process, data, 0, &threadId);
-
-// 3. 스레드 내부에서 네트워크 작업 수행
-Http_SSL_RetPageSend(...);  // HTTP/SSL 요청
-
-// 4. 완료 후 호스트 앱에 이벤트 전송
-Wow_REQ_Quithostio("success", ch);  // POST_NET 이벤트 발생
-
-// 5. 메인 시나리오에서 다음 상태로 자동 전이
-```
-
-### 8.2 타임아웃 처리
-
-```cpp
-#define DEFAULT_RECV_TIME  5000   // 수신 타임아웃 5초
-#define DEFAULT_SEND_TIME  5000   // 송신 타임아웃 5초
-#define MAX_RETRY_COUNT    3      // 최대 재시도 횟수
-```
+| 조건 | 처리 |
+|------|------|
+| m_DBAccess == -1 | 시스템 장애 안내 → 종료 |
+| m_bDnisInfo < 0 | 송수신 에러 안내 → 종료 |
+| m_bDnisInfo == 0 | 주문정보 없음 안내 → 종료 |
+| m_szretval == "6020" | 와우캐시 결제완료 안내 → 종료 |
 
 ---
 
-## 9. 설정 파일
+## 8. 테스트 시나리오
 
-### 파일: `ALLAT_WOWTV_Billkey_Easy_Scenario_para.ini`
+### 8.1 결제금액 안내 테스트
 
-```ini
-[COMMON]
-LogLevel=3
-MaxChannel=240
+| TC ID | couponUseFlag | couponName | bonusCashUseAmt | 예상 멘트 |
+|-------|---------------|------------|-----------------|-----------|
+| TC-01 | N | - | 0 | 기본 멘트 (할인 없음) |
+| TC-02 | Y | 10%할인쿠폰 | 0 | 쿠폰 적용 멘트 |
+| TC-03 | N | - | 1000 | 보너스캐시 적용 멘트 |
+| TC-04 | Y | 10%할인쿠폰 | 1000 | 쿠폰+보너스캐시 멘트 |
 
-[ALLAT]
-ShopId=가맹점ID
-LicenseKey=라이센스키
-CancelPwd=취소비밀번호
-TestMode=0
+### 8.2 상품유형별 테스트
 
-[DATABASE]
-Server=DB서버주소
-Database=DB명
-UserId=계정
-Password=비밀번호
+| TC ID | categoryId_2nd (원본) | m_szCategoryId (정규화) | 예상 해지조건 멘트 |
+|-------|----------------------|------------------------|-------------------|
+| TC-05 | (빈값) | SERVICE | 일반상품 해지조건 |
+| TC-06 | AAAAAA | SERVICE | 일반상품 해지조건 |
+| TC-07 | TABLET | TABLET | 태블릿 교환/반품 불가 안내 |
+| TC-08 | EDUCATION | EDUCATION | 교육상품 해지불가 안내 |
+| TC-09 | UNKNOWN | SERVICE | 일반상품 해지조건 |
 
-[TIMEOUT]
-RecvTimeout=5000
-SendTimeout=5000
-```
+### 8.3 쿠폰/보너스캐시 소멸 안내 테스트
+
+| TC ID | categoryId | couponName | bonusCashUseAmt | 예상 소멸 안내 멘트 |
+|-------|------------|------------|-----------------|---------------------|
+| TC-10 | SERVICE | 10%할인쿠폰 | 1000 | `...10%할인쿠폰 쿠폰과 보너스캐시 1000원은 소멸됨을 알려드립니다.` |
+| TC-11 | SERVICE | 10%할인쿠폰 | 0 | `...10%할인쿠폰 쿠폰이 소멸됨을 알려드립니다.` |
+| TC-12 | SERVICE | (없음) | 1000 | `...1000원 보너스캐시는 소멸됨을 알려드립니다.` |
+| TC-13 | SERVICE | (없음) | 0 | ❌ 소멸 안내 없음 |
+| TC-14 | TABLET | 10%할인쿠폰 | 1000 | ❌ 소멸 안내 없음 (상품유형 불일치) |
+| TC-15 | EDUCATION | 10%할인쿠폰 | 1000 | ❌ 소멸 안내 없음 (상품유형 불일치) |
 
 ---
 
-## 10. 참고사항
+## 9. 참고사항
 
-### 10.1 인코딩
+### 9.1 인코딩
 - 모든 소스 파일: UTF-8 with BOM
 - 네트워크 전문: EUC-KR (레거시 호환)
 
-### 10.2 채널 지원
+### 9.2 채널 지원
 - 최대 240채널 동시 처리 (MAXCHAN=240)
 - 채널별 독립적인 시나리오 인스턴스
 
-### 10.3 빌드 환경
+### 9.3 빌드 환경
 - Windows Server 2016
 - Visual Studio C++
 - 빌드 디렉토리: `c:\dasam\windows_pri_20220113\windows_pri\allat_stockwin_quick_new_scenario\`
 
 ---
 
-## 11. 실제 실행 로그 예시
+## 10. 코드 위치 참조
 
-### 11.1 정상 시나리오 타임라인 (로그 기반)
+| 기능 | 파일 | 라인 번호 |
+|------|------|-----------|
+| ALLAT_getOrderInfo 함수 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1356-1720 |
+| 결제금액 안내 4분기 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1503-1556 |
+| 상품유형별 해지조건 안내 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1567-1593 |
+| 쿠폰/보너스캐시 소멸 안내 (3분기) | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1587-1615 |
+| 투자 유의사항 안내 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1618-1624 |
+| 동의 확인 멘트 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1629-1630 |
+| TTS 멘트 조합 | ALLAT_Stockwin_Quick_New_Scenario.cpp | 1635-1643 |
+| 상품유형 정규화 로직 | WowTvSocket.cpp | 1107-1117 |
+| 쿠폰/보너스캐시 저장 | WowTvSocket.cpp | 1097-1105 |
+| PayLetter API 호출 | WowTvSocket.cpp | 1030-1149 |
+| ALLAT_CIP_ScenarioStart | ALLAT_Stockwin_Quick_New_Scenario.cpp | 2051-2217 |
+| 시나리오 클래스 정의 | ALLAT_Stockwin_Quick_New_Scenario.h | 17-122 |
 
-아래는 실제 ARS 통화 로그에서 추출한 시나리오 실행 흐름입니다.
+---
 
-```
-시간         | 단계                    | 함수/이벤트                              | 설명
--------------|-------------------------|------------------------------------------|---------------------------
-23:53:12.638 | 전화 착신               | GCEV_OFFERED                             | DNIS=6690, ANI=01024020684
-23:53:12.888 | 통화 연결               | GCEV_ANSWERED                            | 서비스 시작
-23:53:14.278 | DLL 로드                | ALLAT_Stockwin_Quick_New_Scenario.dll    | 시나리오 로드 완료
-23:53:14.450 | 인사말 재생             | ALLAT_WOWTV_Quick_CIAScenarioStart [0]   | wownet_intro.wav
-23:53:19.592 | PayLetter 초기화        | PL_Initialize                            | isLive=0 (개발모드)
-23:53:19.701 | 주문정보 조회 시작      | PL_InfoOrderReq_Process START            | REST API 호출 시작
-23:53:19.732 | API 요청                | PL_HttpPost                              | URL: /v1/payment/simple/getpaymentinfo_V2
-23:53:19.889 | API 응답                | StatusCode=200                           | 주문정보 수신 완료
-23:53:19.936 | 주문정보 파싱           | orderNo=202601230105280                  | 금액=20,000원
-23:53:20.076 | DB 보충 조회            | RegOrderInfo, sp_getAllatOrderInfoByOrderNo | 가맹점명 조회
-23:53:20.357 | 주문정보 안내           | ALLAT_WOWTV_Quick_getOrderInfo [0]       | TTS 안내 시작
-23:53:32.593 | 결제 확인               | DTMF '1' 입력                            | 결제 진행 선택
-23:53:42.234 | 카드번호 입력           | ALLAT_WOWTV_Quick_CardInput [0]          | 16자리 입력 안내
-23:53:49.265 | 카드번호 수집           | ALLAT_WOWTV_Quick_CardInput [1]          | DTMF 16자리 수집 완료
-23:53:51.593 | 유효기간 입력           | ALLAT_WOWTV_Quick_EffecDate [0]          | 4자리 입력 안내
-23:53:54.859 | 유효기간 수집           | ALLAT_WOWTV_Quick_EffecDate [1]          | DTMF 4자리 수집 완료
-23:53:56.750 | 할부 선택               | ALLAT_WOWTV_Quick_InstallmentCConfrim    | 일시불 선택 (DTMF '1')
-23:53:56.922 | ALLAT 결제 요청         | AllatArsPayProcess                       | 승인 요청 전송
-23:53:57.094 | 결제 응답               | 응답코드: MB14                           | 카드번호 오류
-23:53:57.547 | 결제 로그 저장          | setPayLogProc                            | DB 기록
-23:53:57.297 | 에러 안내               | ALLAT_WOWTV_Quick_payARS [0]             | pay_fail_msg.wav
-23:54:02.735 | 서비스 종료             | ALLAT_ExitSvc [0]                        | service_end.wav
-23:54:04.750 | 통화 종료               | gc_hookon()                              | 전화 끊기
-```
+**문서 종료**
 
-### 11.2 주요 로그 패턴
-
-#### PayLetter API 호출 로그
-```
-[PayLetterAPI] PL_Initialize: isLive=0, appId=8c3cdc588ff746599a0beb714b4dce3a, baseUrl=https://devswbillapi.wowtv.co.kr
-[PayLetterAPI] PL_GetPaymentInfo: reqType=1, reqTypeVal=6690, phoneNo=01024020684, arsType=ARS
-[PayLetterAPI] PL_HttpPost: URL=https://devswbillapi.wowtv.co.kr/v1/payment/simple/getpaymentinfo_V2
-[PayLetterAPI] PL_HttpPost: StatusCode=200, ResponseLength=757
-```
-
-#### 주문정보 파싱 로그
-```
-PL_InfoOrderReq_Process: 주문정보 파싱 완료
-  주문번호: 202601230105280
-  가맹점ID: T_arsstockwin
-  회원ID: SW2637262148
-  상품명: 주식비타민 정규 1개월 2만원
-  별명: 스트림
-  결제금액: 20000
-  금액: 20000
-```
-
-#### ALLAT 결제 결과 로그
-```
-==============================================
-응답코드        : MB14
-응답메세지      : 카드번호 오류
-==============================================
-```
-
-### 11.3 함수 호출 순서
-
-```
-1. CreateEngine()                          // DLL 엔트리 포인트
-2. ALLAT_WOWTV_Quick_CIAScenarioStart()    // 시나리오 시작
-3. PL_Initialize()                         // PayLetter API 초기화
-4. PL_InfoOrderReq_Process()               // 주문정보 조회
-   └── PL_GetPaymentInfo()                 // REST API 호출
-   └── RegOrderInfo()                      // DB 등록
-   └── sp_getAllatOrderInfoByOrderNo()     // DB 보충 조회
-5. ALLAT_WOWTV_Quick_getOrderInfo()        // 주문정보 TTS 안내
-6. ALLAT_WOWTV_Quick_CardInput()           // 카드번호 입력
-7. ALLAT_WOWTV_Quick_EffecDate()           // 유효기간 입력
-8. ALLAT_WOWTV_Quick_InstallmentCConfrim() // 할부 선택
-9. AllatArsPayProcess()                    // ALLAT 결제 승인
-10. setPayLogProc()                        // 결제 로그 저장
-11. ALLAT_WOWTV_Quick_payARS()             // 결과 안내
-12. ALLAT_ExitSvc()                        // 서비스 종료
-13. DestroyEngine()                        // DLL 종료
-```
-
-### 11.4 에러 코드 참조
-
-| 에러 코드 | 설명 | 처리 방법 |
-|-----------|------|-----------|
-| MB14 | 카드번호 오류 | 카드번호 재입력 요청 |
-| 0000 | 정상 승인 | 승인 완료 안내 |
-| MA01 | 유효기간 오류 | 유효기간 재입력 요청 |
-| MA05 | 한도 초과 | 결제 불가 안내 |
+| 버전 | 일자 | 작성자 | 변경내용 |
+|------|------|--------|----------|
+| 1.0 | 2026-01-23 | Claude | 최초 작성 |
+| 2.0 | 2026-01-26 | Claude | ALLAT_Stockwin_Quick_New_Scenario 기준 전면 개정 - 쿠폰/보너스캐시 4분기, 상품유형별 안내 (SERVICE/TABLET/EDUCATION), 투자 유의사항 추가, 코드 라인 참조 추가 |
+| 2.1 | 2026-01-26 | Claude | 쿠폰/보너스캐시 소멸 안내 3분기로 세분화 - 쿠폰명/금액을 동적으로 TTS 멘트에 포함 |
