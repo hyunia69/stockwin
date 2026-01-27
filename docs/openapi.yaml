@@ -1,4 +1,4 @@
-﻿openapi: 3.0.3
+openapi: 3.0.3
 info:
   title: StockWin ARS API
   description: ARS 결제 시스템 연동 API
@@ -67,6 +67,7 @@ paths:
                 - arrribute_type
                 - amount
                 - cc_pord_desc
+                - service_name
               properties:
                 mode:
                   type: string
@@ -112,8 +113,11 @@ paths:
                   example: "프리미엄종목^PROD001"
                 service_name:
                   type: string
-                  description: 서비스명 (DB SERVOCE_NAME 컬럼에 저장)
-                  example: "스탁윈프리미엄"
+                  description: SERVICE | EDUCATION | TABLET
+                  enum:
+                    - SERVICE
+                    - EDUCATION
+                    - TABLET
                 startdtm:
                   type: string
                   description: 사전예약 시작일시 (ADVRESERVD일 때 필수, YYYYMMDDHHMM)

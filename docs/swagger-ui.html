@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -623,7 +623,7 @@
                                 "application/x-www-form-urlencoded": {
                                     "schema": {
                                         "type": "object",
-                                        "required": ["mode", "shop_id", "ars_tel_no", "scenario_type", "arrribute_type", "amount", "cc_pord_desc"],
+                                        "required": ["mode", "shop_id", "ars_tel_no", "scenario_type", "arrribute_type", "amount", "cc_pord_desc", "service_name"],
                                         "properties": {
                                             "mode": {
                                                 "type": "string",
@@ -665,8 +665,8 @@
                                             },
                                             "service_name": {
                                                 "type": "string",
-                                                "description": "서비스명 (DB SERVOCE_NAME 컬럼에 저장)",
-                                                "example": "스탁윈프리미엄"
+                                                "description": "SERVICE | EDUCATION | TABLET",
+                                                "enum": ["SERVICE", "EDUCATION", "TABLET"]
                                             },
                                             "startdtm": {
                                                 "type": "string",
