@@ -1,4 +1,4 @@
-﻿<!--METADATA TYPE="typelib" FILE="C:\program Files\Common Files\System\ado\msado15.dll"-->
+<!--METADATA TYPE="typelib" FILE="C:\program Files\Common Files\System\ado\msado15.dll"-->
 <%
 ' ============================================
 ' StockWin 결제 시나리오 등록 API
@@ -115,7 +115,7 @@ DLL_NAME_VALUE = "ALLAT_Stockwin_Quick_New_Scenario.dll"
 
 ' 요청 파라미터 수신 (Raw POST 데이터에서 직접 파싱)
 Dim strMode, shop_id, ars_tel_no, scenario_type, arrribute_type
-Dim amount, cc_pord_desc, startdtm
+Dim amount, cc_pord_desc, startdtm, service_name
 
 strMode = Trim(GetPostParam(rawPostData, "mode"))
 shop_id = Trim(GetPostParam(rawPostData, "shop_id"))
@@ -125,6 +125,7 @@ arrribute_type = Trim(GetPostParam(rawPostData, "arrribute_type"))
 amount = Trim(GetPostParam(rawPostData, "amount"))
 cc_pord_desc = Trim(GetPostParam(rawPostData, "cc_pord_desc"))
 startdtm = Trim(GetPostParam(rawPostData, "startdtm"))
+service_name = Trim(GetPostParam(rawPostData, "service_name"))
 
 ' mode 검증
 If strMode <> MODE_VALUE Then
@@ -187,15 +188,15 @@ If UCase(arrribute_type) = "ADVRESERVD" Then
 End If
 
 ' 비즈니스 로직 처리
-Dim service_name, product_code, dnis_descript, pos
+Dim product_name, product_cd, dnis_descript, pos
 
 pos = InStr(cc_pord_desc, "^")
 If pos > 0 Then
-    service_name = Left(cc_pord_desc, pos - 1)
-    product_code = Mid(cc_pord_desc, pos + 1)
+    product_name = Left(cc_pord_desc, pos - 1)
+    product_cd = Mid(cc_pord_desc, pos + 1)
 Else
-    service_name = cc_pord_desc
-    product_code = ""
+    product_name = cc_pord_desc
+    product_cd = ""
 End If
 
 ' JSON 생성
@@ -203,11 +204,11 @@ dnis_descript = "{""amount"":""" & amount & """,""attr"":""" & arrribute_type & 
 If startdtm <> "" Then
     dnis_descript = dnis_descript & ",""startdtm"":""" & startdtm & """"
 End If
-If product_code <> "" Then
-    dnis_descript = dnis_descript & ",""product_code"":""" & product_code & """"
+If product_cd <> "" Then
+    dnis_descript = dnis_descript & ",""product_cd"":""" & product_cd & """"
 End If
-If service_name <> "" Then
-    dnis_descript = dnis_descript & ",""service_name"":""" & service_name & """"
+If product_name <> "" Then
+    dnis_descript = dnis_descript & ",""product_name"":""" & product_name & """"
 End If
 dnis_descript = dnis_descript & "}"
 
@@ -252,7 +253,7 @@ If dnisCount = 0 Then
           "'" & Replace(DLL_NAME_VALUE, "'", "''") & "', " & _
           "'" & Replace(dnis_descript, "'", "''") & "', " & _
           "'" & PG_CODE_VALUE & "', " & _
-          "'" & Replace(arrribute_type, "'", "''") & "', " & _
+          "'" & Replace(service_name, "'", "''") & "', " & _
           "'Y', 'N', " & _
           "GETDATE(), GETDATE(), 'SYSTEM'" & _
           ")"
@@ -272,7 +273,7 @@ Else
           "ARS_TYPE = '" & Replace(scenario_type, "'", "''") & "', " & _
           "DLL_NAME = '" & Replace(DLL_NAME_VALUE, "'", "''") & "', " & _
           "DNIS_DESCRIPT = '" & Replace(dnis_descript, "'", "''") & "', " & _
-          "SERVOCE_NAME = '" & Replace(arrribute_type, "'", "''") & "', " & _
+          "SERVOCE_NAME = '" & Replace(service_name, "'", "''") & "', " & _
           "WRITE_DT = GETDATE() " & _
           "WHERE ARS_DNIS = '" & Replace(ars_tel_no, "'", "''") & "'"
 
@@ -293,9 +294,9 @@ On Error GoTo 0
 
 ' 성공 응답
 Dim item_cd
-item_cd = product_code
+item_cd = product_cd
 If item_cd = "" Then
-    item_cd = service_name
+    item_cd = product_name
 End If
 
 Response.Write ars_tel_no & "|" & item_cd & "|0000|등록이 완료되었습니다."
