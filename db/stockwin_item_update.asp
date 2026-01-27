@@ -1,4 +1,4 @@
-<!--METADATA TYPE="typelib" FILE="C:\program Files\Common Files\System\ado\msado15.dll"-->
+﻿<!--METADATA TYPE="typelib" FILE="C:\program Files\Common Files\System\ado\msado15.dll"-->
 <%
 ' ============================================
 ' StockWin 결제 시나리오 등록 API
