@@ -95,4 +95,11 @@ Visual Studio C++ 프로젝트입니다. 빌드 전 필요 사항:
 - 파이선 코드나 기타 유틸리티는 utils 폴더 아래 생성한다.
 - `.env` 파일은 git에 커밋하지 않는다 (.gitignore에 추가 권장).
 - 현재는 ALLAT_Stockwin_Quick_New_Scenario 만 검토 대상이다. 모든 작업은 이 시나리오만 적용한다.
-- DB 테이블은 claudedocs/DB_SCHEMA_ALLAT.md 를 참조한다. 
+- DB 테이블은 claudedocs/DB_SCHEMA_ALLAT.md 를 참조한다.
+
+## Git 커밋 정책
+
+**중요**: 코드 변경 후 자동으로 git commit을 하지 마세요.
+- 모든 커밋은 사용자가 명시적으로 요청할 때만 수행합니다
+- 작업 계획(Plan)에 커밋 지시를 포함하지 마세요
+- 사용자가 "커밋해줘" 또는 "commit"이라고 말할 때만 커밋합니다
