@@ -2317,6 +2317,50 @@ int CALLAT_Hangung_Quick_Scenario::jobArs(/* [in] */int state)
 	return ALLAT_jobArs(0);
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// 전화 연결 해제 시 호출되는 콜백 함수
+// 호스트 시스템이 clean_channel > save_log 과정에서 자동으로 호출
+// 별도의 콜백 등록 불필요 (IScenario 인터페이스 가상 메서드)
+//
+int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
+{
+	int localCh = nChan;
+
+	info_printf(localCh, "DisConnectProcess START");
+
+	// DB 연결 확인 및 sp_SubCallCnt3 호출
+	if (m_AdoDb != NULL)
+	{
+		info_printf(localCh, "Allat DB Access 접근 중.... ");
+
+		if (m_AdoDb->GetDBCon())
+		{
+			info_printf(localCh, "Allat DB Access 성공.... ");
+
+			// COMMON_DNIS_INFO 테이블의 CALL_CNT 감소
+			// sp_SubCallCnt3 저장 프로시저 호출
+			info_printf(localCh, "sp_SubCallCnt3 START");
+
+			char szQuery[512] = {0};
+			sprintf_s(szQuery, sizeof(szQuery),
+				"UPDATE COMMON_DNIS_INFO SET CALL_CNT = CALL_CNT - 1 WHERE ARS_DNIS = '%s' AND CALL_CNT > 0",
+				szDnis);
+
+			m_AdoDb->Excute(szQuery);
+
+			info_printf(localCh, "sp_SubCallCnt3 END");
+		}
+		else
+		{
+			info_printf(localCh, "Allat DB Access 실패.... ");
+		}
+	}
+
+	info_printf(localCh, "DisConnectProcess END");
+
+	return 0;
+}
+
 
 #include <Windows.h>                    /**< Using Windows Data Type       */
 //#include <crtdbg.h>                     /**< Using _CrtReportMode() Option */

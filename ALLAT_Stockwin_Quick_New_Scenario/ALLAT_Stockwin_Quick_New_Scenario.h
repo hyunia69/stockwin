@@ -19,6 +19,7 @@ class CALLAT_Hangung_Quick_Scenario : public IScenario
 public:
 	int  STDMETHODCALLTYPE ScenarioInit(LPMTP *Port, char *ArsType);
 	int  STDMETHODCALLTYPE jobArs(/* [in] */int state);
+	int  STDMETHODCALLTYPE DisConnectProcess();  // 전화 연결 해제 시 호출되는 콜백
 
 	// 데이터 베이스 접속 성공 여부
 	int m_DBAccess;

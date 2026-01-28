@@ -139,7 +139,7 @@ If shop_id = "" Then
     Response.End
 End If
 
-If shop_id <> "arsstockwin" And shop_id <> "arsstockwin1" And shop_id <> "arsstockwin2" Then
+If shop_id <> "arsstockwin" And shop_id <> "arsstockwin1" And shop_id <> "arsstockwin2" <> "T_arsstockwin" And shop_id <> "T_arsstockwin1" And shop_id <> "T_arsstockwin2" Then
     Response.Write ars_tel_no & "||0002|유효하지 않은 shop_id입니다."
     Response.End
 End If
