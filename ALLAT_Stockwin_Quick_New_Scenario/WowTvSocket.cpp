@@ -1104,6 +1104,16 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 			  plInfo.bonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag) - 1);
 	pScenario->m_nBonusCashUseAmt = plInfo.bonusCashUseAmt;
 
+	// ========================================================================
+	// 롤백 플래그 설정 (쿠폰 또는 보너스캐시 사용 시)
+	// ========================================================================
+	if (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 || pScenario->m_nBonusCashUseAmt > 0)
+	{
+		pScenario->m_bNeedRollback = TRUE;
+		xprintf("[CH:%03d] PL_InfoOrderReq: 롤백 플래그 설정 (coupon=%s, bonusCash=%d)",
+				ch, pScenario->m_szCouponUseFlag, pScenario->m_nBonusCashUseAmt);
+	}
+
 	// 상품유형 (categoryId_2nd)
 	// TABLET, EDUCATION 외에는 모두 SERVICE로 정규화
 	if (strcmp(plInfo.categoryId_2nd, "TABLET") == 0 ||

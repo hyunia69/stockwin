@@ -35,3 +35,6 @@ tmpclaude-*
 .env
 .env.local
 .env.*.local
+
+# Sisyphus work session files
+.sisyphus/

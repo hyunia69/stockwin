@@ -12,6 +12,7 @@
 #include "Scenaio.h"
 #include "ADODB.h"
 #include "ALLAT_Stockwin_Quick_New_Scenario.h"
+#include "PayLetterAPI.h"
 
 #define  ALLAT_MID      "allat_testars"
 #define  ALLAT_LICENSEKEY "4d184eff535106b071ada6b9f1940a59"
@@ -2253,10 +2254,20 @@ CALLAT_Hangung_Quick_Scenario::CALLAT_Hangung_Quick_Scenario()
 
 	m_nRetryMaxCnt = ::GetPrivateProfileInt("RETRY", "MAXCOUNT", 0, PARAINI);
 	m_nRetryCnt = 0;
+	m_bDisconnectProcessed = FALSE;
 }
 
 CALLAT_Hangung_Quick_Scenario::~CALLAT_Hangung_Quick_Scenario()
 {
+	// 소멸자에서 DisConnectProcess 호출 (롤백, DB 정리)
+	// 참고: C++ 소멸자에서는 __try/__except (SEH) 사용 불가 (C2712 오류)
+	// DisConnectProcess 내부에 이미 중복 호출 방지 및 null 체크가 있음
+	if (!m_bDisconnectProcessed)
+	{
+		if (xprintf) xprintf("[CH:%03d] ~Destructor > Calling DisConnectProcess", nChan);
+		this->DisConnectProcess();
+	}
+
 	if (m_hThread)
 	{
 		xprintf("[CH:%03d] Allat DB Access 동작 중.... ", nChan);
@@ -2290,6 +2301,11 @@ int CALLAT_Hangung_Quick_Scenario::ScenarioInit(LPMTP *Port, char *ArsType)
 	//IScenario_enter_handler();
 	//curyport = Port;
 	//IScenario_leave_handler();
+	
+	// 롤백 관련 플래그 초기화
+	m_bNeedRollback = FALSE;
+	m_bPaymentApproved = FALSE;
+	
 	return 0;
 }
 
@@ -2326,20 +2342,95 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 {
 	int localCh = nChan;
 
-	info_printf(localCh, "DisConnectProcess START");
+	// 중복 호출 방지
+	if (m_bDisconnectProcessed)
+	{
+		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Already processed, skipping", localCh);
+		return 0;
+	}
+	m_bDisconnectProcessed = TRUE;
+
+	if (info_printf) info_printf(localCh, "DisConnectProcess START");
+	if (xprintf) xprintf("[CH:%03d] [AHN] DisConnectProcess START",localCh);
+
+	// ========================================================================
+	// 결제 스레드 완료 대기 (최대 5초)
+	// ========================================================================
+	if (m_hPayThread)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Waiting for payment thread completion (max 5000ms)");
+		DWORD waitResult = ::WaitForSingleObject(m_hPayThread, 5000);
+		if (waitResult == WAIT_TIMEOUT)
+		{
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Payment thread wait timeout", localCh);
+		}
+		else if (waitResult == WAIT_OBJECT_0)
+		{
+			if (info_printf) info_printf(localCh, "DisConnectProcess > Payment thread completed successfully");
+		}
+	}
+
+	// ========================================================================
+	// 예약 결제 롤백 처리 (캐시/쿠폰 사용 시)
+	// ========================================================================
+	if (m_bNeedRollback && !m_bPaymentApproved)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)");
+	    if (xprintf) xprintf("[CH:%03d] [AHN] DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)",localCh);
+
+		// 주문번호와 회원ID 유효성 검증
+		if (m_szMx_issue_no[0] != '\0' && m_szMemberId[0] != '\0')
+		{
+			if (info_printf) info_printf(localCh, "DisConnectProcess > Calling PL_ReserveRollback (OrderNo=%s, MemberId=%s)", 
+				m_szMx_issue_no, m_szMemberId);
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Executing rollback for OrderNo=%s", localCh, m_szMx_issue_no);
+
+			// 예약 결제 롤백 API 호출
+			int rollbackResult = PL_ReserveRollback(m_szMx_issue_no, m_szMemberId);
+			
+			if (rollbackResult == 0)
+			{
+				if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback succeeded");
+				if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback completed successfully", localCh);
+			}
+			else
+			{
+				if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback failed (result=%d)", localCh, rollbackResult);
+			}
+
+			// 중복 호출 방지
+			m_bNeedRollback = FALSE;
+			if (info_printf) info_printf(localCh, "DisConnectProcess > m_bNeedRollback reset to FALSE");
+		}
+		else
+		{
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback skipped - invalid OrderNo or MemberId (OrderNo=%s, MemberId=%s)", 
+				localCh, m_szMx_issue_no, m_szMemberId);
+		}
+	}
+	else if (m_bNeedRollback && m_bPaymentApproved)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback skipped - payment was approved");
+		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > No rollback needed (payment approved)", localCh);
+	}
+	else if (!m_bNeedRollback)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > No rollback needed (cache/coupon not used)");
+	}
 
 	// DB 연결 확인 및 sp_SubCallCnt3 호출
 	if (m_AdoDb != NULL)
 	{
-		info_printf(localCh, "Allat DB Access 접근 중.... ");
+		if (info_printf) info_printf(localCh, "[AHN] Allat DB Access 접근 중.... ");
+		if (xprintf) xprintf("[CH:%03d] [AHN] Allat DB Access 접근 중....",localCh);
 
 		if (m_AdoDb->GetDBCon())
 		{
-			info_printf(localCh, "Allat DB Access 성공.... ");
+			if (info_printf) info_printf(localCh, "Allat DB Access 성공.... ");
 
 			// COMMON_DNIS_INFO 테이블의 CALL_CNT 감소
 			// sp_SubCallCnt3 저장 프로시저 호출
-			info_printf(localCh, "sp_SubCallCnt3 START");
+			if (info_printf) info_printf(localCh, "sp_SubCallCnt3 START");
 
 			char szQuery[512] = {0};
 			sprintf_s(szQuery, sizeof(szQuery),
@@ -2348,15 +2439,15 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 
 			m_AdoDb->Excute(szQuery);
 
-			info_printf(localCh, "sp_SubCallCnt3 END");
+			if (info_printf) info_printf(localCh, "sp_SubCallCnt3 END");
 		}
 		else
 		{
-			info_printf(localCh, "Allat DB Access 실패.... ");
+			if (info_printf) info_printf(localCh, "Allat DB Access 실패.... ");
 		}
 	}
 
-	info_printf(localCh, "DisConnectProcess END");
+	if (info_printf) info_printf(localCh, "DisConnectProcess END");
 
 	return 0;
 }

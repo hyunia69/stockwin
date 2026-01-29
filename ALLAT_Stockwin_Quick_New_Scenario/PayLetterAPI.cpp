@@ -794,6 +794,67 @@ int PL_RegisterAgree(const char* phoneNo, const char* pgCode, const char* agreeF
     return 0;
 }
 
+int PL_ReserveRollback(const char* orderNo, const char* memberId)
+{
+	char jsonBody[256];
+	char response[PL_MAX_RESPONSE_BUFFER];
+	int statusCode = 0;
+	char resultCode[16];
+
+	memset(jsonBody, 0, sizeof(jsonBody));
+	memset(response, 0, sizeof(response));
+	memset(resultCode, 0, sizeof(resultCode));
+
+	// 파라미터 검증
+	if (orderNo == NULL || orderNo[0] == '\0') {
+		PL_SetLastError("PL_ReserveRollback: orderNo is empty");
+		return -1;
+	}
+	if (memberId == NULL || memberId[0] == '\0') {
+		PL_SetLastError("PL_ReserveRollback: memberId is empty");
+		return -1;
+	}
+
+	// eprintf 로그 출력
+	if (eprintf) {
+		eprintf("[PayLetterAPI] PL_ReserveRollback: ========== 예약 결제 롤백 시작 ==========");
+		eprintf("[PayLetterAPI] PL_ReserveRollback: orderNo=%s, memberId=%s", orderNo, memberId);
+	}
+
+	// JSON 요청 생성
+	sprintf_s(jsonBody, sizeof(jsonBody),
+			  "{\"orderNo\":\"%s\",\"memberId\":\"%s\"}",
+			  orderNo, memberId);
+
+	// API 호출
+	if (!PL_HttpPost("/v1/payment/simple/reserverollback", jsonBody, response, sizeof(response), &statusCode)) {
+		if (eprintf) eprintf("[PayLetterAPI] PL_ReserveRollback: HTTP 요청 실패");
+		return -2;
+	}
+
+	if (statusCode == 200) {
+		PL_JsonGetString(response, "resultCode", resultCode, sizeof(resultCode));
+		
+		if (eprintf) {
+			eprintf("[PayLetterAPI] PL_ReserveRollback: statusCode=%d, resultCode=%s", statusCode, resultCode);
+		}
+
+		// resultCode가 "0"이면 성공
+		if (strcmp(resultCode, "0") == 0) {
+			if (eprintf) eprintf("[PayLetterAPI] PL_ReserveRollback: 롤백 성공");
+			return 0;
+		}
+		else {
+			if (eprintf) eprintf("[PayLetterAPI] PL_ReserveRollback: 롤백 실패 (resultCode=%s)", resultCode);
+			return atoi(resultCode);
+		}
+	}
+	else {
+		if (eprintf) eprintf("[PayLetterAPI] PL_ReserveRollback: HTTP 오류 (statusCode=%d)", statusCode);
+		return -3;
+	}
+}
+
 // ============================================================================
 // 에러 처리
 // ============================================================================

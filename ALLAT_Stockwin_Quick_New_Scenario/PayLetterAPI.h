@@ -187,6 +187,13 @@ int PL_GetPaymentInfo(int reqType, const char* reqTypeVal,
 // @return 성공 여부 (1=성공, 0=실패)
 int PL_RegisterAgree(const char* phoneNo, const char* pgCode, const char* agreeFlag);
 
+// 예약 결제 롤백
+// POST /v1/payment/simple/reserverollback
+// @param orderNo 주문번호
+// @param memberId 회원 ID (UUID)
+// @return 성공 여부 (0=성공, 그 외=실패)
+int PL_ReserveRollback(const char* orderNo, const char* memberId);
+
 // ============================================================================
 // HTTP 통신 함수
 // ============================================================================

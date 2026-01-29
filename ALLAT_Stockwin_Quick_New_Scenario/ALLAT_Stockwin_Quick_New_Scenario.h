@@ -117,6 +117,11 @@ public:
 	// 상품유형 (categoryId_2nd 기반)
 	char  m_szCategoryId[17];        // 상품유형 (SERVICE/TABLET/EDUCATION)
 
+	// 롤백 관련 플래그
+	BOOL  m_bNeedRollback;           // 캐시/쿠폰 롤백 필요 여부
+	BOOL  m_bPaymentApproved;        // 결제 승인 성공 여부
+	BOOL  m_bDisconnectProcessed;    // DisConnectProcess 호출 여부
+
 private:
 
 
