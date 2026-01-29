@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
 * 파일명 : NiceAccess.cpp
 * 작성일 : 2015.01.05
 * 작성자 : 최영락
@@ -611,6 +611,10 @@ unsigned int __stdcall AllatArsPayProcess(void *data)
 		xprintf("[CH:%03d] 무이자여부      : %s", ch, sZerofeeYn);
 		xprintf("[CH:%03d] 인증여부        : %s", ch, sCertYn);
 		xprintf("[CH:%03d] 직가맹여부      : %s", ch, sContractYn);
+
+		// 결제 승인 성공 플래그 설정 (롤백 방지)
+		xprintf("[CH:%03d] AllatArsPayProcess > Payment approved, setting m_bPaymentApproved=TRUE", ch);
+		InterlockedExchange((LONG*)&pScenario->m_bPaymentApproved, TRUE);
 	}
 	else{
 		// reply_cd 가 "0000" 아닐때는 에러 (자세한 내용은 매뉴얼참조)

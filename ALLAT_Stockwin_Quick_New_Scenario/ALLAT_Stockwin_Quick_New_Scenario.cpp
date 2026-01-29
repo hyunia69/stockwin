@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 *																			*
 *	주   S E R V I C E	J O B S 											*
 *																			*
@@ -2271,7 +2271,10 @@ CALLAT_Hangung_Quick_Scenario::~CALLAT_Hangung_Quick_Scenario()
 	if (m_hThread)
 	{
 		xprintf("[CH:%03d] Allat DB Access 동작 중.... ", nChan);
-		::WaitForSingleObject(m_hThread, INFINITE);
+		DWORD waitResult1 = ::WaitForSingleObject(m_hThread, 10000);
+		if (waitResult1 == WAIT_TIMEOUT) {
+			xprintf("[CH:%03d] ~Destructor > DB thread wait timeout (10s)", nChan);
+		}
 		CloseHandle(m_hThread);
 		m_hThread = NULL;
 		xprintf("[CH:%03d] Allat DB Access 중지.... ", nChan);
@@ -2279,11 +2282,13 @@ CALLAT_Hangung_Quick_Scenario::~CALLAT_Hangung_Quick_Scenario()
 	if (m_hPayThread)
 	{
 		xprintf("[CH:%03d] Allat PAYMENT 동작 중.... ", nChan);
-		::WaitForSingleObject(m_hPayThread, INFINITE);
+		DWORD waitResult2 = ::WaitForSingleObject(m_hPayThread, 10000);
+		if (waitResult2 == WAIT_TIMEOUT) {
+			xprintf("[CH:%03d] ~Destructor > Payment thread wait timeout (10s)", nChan);
+		}
 		CloseHandle(m_hPayThread);
 		m_hPayThread = NULL;
 		xprintf("[CH:%03d] Allat PAYMENT 중지.... ", nChan);
-
 	}
 	if (m_Myport) m_Myport->ppftbl[POST_NET].postcode = HI_OK;
 }
@@ -2304,7 +2309,7 @@ int CALLAT_Hangung_Quick_Scenario::ScenarioInit(LPMTP *Port, char *ArsType)
 	
 	// 롤백 관련 플래그 초기화
 	m_bNeedRollback = FALSE;
-	m_bPaymentApproved = FALSE;
+	InterlockedExchange(&m_bPaymentApproved, FALSE);
 	
 	return 0;
 }
@@ -2373,7 +2378,8 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 	// ========================================================================
 	// 예약 결제 롤백 처리 (캐시/쿠폰 사용 시)
 	// ========================================================================
-	if (m_bNeedRollback && !m_bPaymentApproved)
+	LONG paymentApproved = InterlockedCompareExchange(&m_bPaymentApproved, 0, 0);
+	if (m_bNeedRollback && !paymentApproved)
 	{
 		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)");
 	    if (xprintf) xprintf("[CH:%03d] [AHN] DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)",localCh);
