@@ -2420,35 +2420,6 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 		if (info_printf) info_printf(localCh, "DisConnectProcess > No rollback needed (cache/coupon not used)");
 	}
 
-	// DB 연결 확인 및 sp_SubCallCnt3 호출
-	if (m_AdoDb != NULL)
-	{
-		if (info_printf) info_printf(localCh, "[AHN] Allat DB Access 접근 중.... ");
-		if (xprintf) xprintf("[CH:%03d] [AHN] Allat DB Access 접근 중....",localCh);
-
-		if (m_AdoDb->GetDBCon())
-		{
-			if (info_printf) info_printf(localCh, "Allat DB Access 성공.... ");
-
-			// COMMON_DNIS_INFO 테이블의 CALL_CNT 감소
-			// sp_SubCallCnt3 저장 프로시저 호출
-			if (info_printf) info_printf(localCh, "sp_SubCallCnt3 START");
-
-			char szQuery[512] = {0};
-			sprintf_s(szQuery, sizeof(szQuery),
-				"UPDATE COMMON_DNIS_INFO SET CALL_CNT = CALL_CNT - 1 WHERE ARS_DNIS = '%s' AND CALL_CNT > 0",
-				szDnis);
-
-			m_AdoDb->Excute(szQuery);
-
-			if (info_printf) info_printf(localCh, "sp_SubCallCnt3 END");
-		}
-		else
-		{
-			if (info_printf) info_printf(localCh, "Allat DB Access 실패.... ");
-		}
-	}
-
 	if (info_printf) info_printf(localCh, "DisConnectProcess END");
 
 	return 0;
