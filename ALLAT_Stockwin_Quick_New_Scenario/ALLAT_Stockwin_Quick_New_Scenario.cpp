@@ -1423,6 +1423,20 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			pScenario->m_szpsrtner_nm);
 		eprintf("ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> 파트너명(%s)", state,
 			pScenario->m_szpsrtner_nm);
+
+		// 2026.01.30
+		// 개인정보 제공 동의 멘트 스킵 옵션
+		// INI 파일의 [SCENARIO_OPTIONS] SKIP_PARTNER_CONSENT=1 설정 시 동의 멘트를 건너뛰고 바로 결제 안내로 이동
+		{
+			int nSkipPartnerConsent = ::GetPrivateProfileInt("SCENARIO_OPTIONS", "SKIP_PARTNER_CONSENT", 0, PARAINI);
+			if (nSkipPartnerConsent == 1)
+			{
+				info_printf(localCh, "ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> SKIP_PARTNER_CONSENT=1, 동의 멘트 스킵", state);
+				eprintf("ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> SKIP_PARTNER_CONSENT=1, 동의 멘트 스킵", state);
+				return ALLAT_getOrderInfo(9);
+			}
+		}
+
 		if (TTS_Play)
 		{
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 1, 0);
