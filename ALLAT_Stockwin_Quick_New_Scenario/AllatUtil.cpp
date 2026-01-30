@@ -1211,3 +1211,44 @@ int setValue(ALLAT_ENCDATA atEnc, const char *sKey, const char *sValue){
 
 	return nFind;
 }
+
+void ConvertDigitToKorean(const char* szInput, char* szOutput, int nOutputSize)
+{
+	static const char* szDigitKorean[] = {
+		"영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"
+	};
+	int nLen;
+	int i;
+	size_t nOutLen;
+	size_t nKoreanLen;
+	char c;
+
+	memset(szOutput, 0x00, nOutputSize);
+
+	if (szInput == NULL) return;
+
+	nLen = strlen(szInput);
+
+	for (i = 0; i < nLen; i++)
+	{
+		c = szInput[i];
+		nOutLen = strlen(szOutput);
+
+		if (c >= '0' && c <= '9')
+		{
+			nKoreanLen = strlen(szDigitKorean[c - '0']);
+			if (nOutLen + nKoreanLen < (size_t)nOutputSize)
+			{
+				strcat_s(szOutput, nOutputSize, szDigitKorean[c - '0']);
+			}
+		}
+		else
+		{
+			if (nOutLen + 1 < (size_t)nOutputSize)
+			{
+				szOutput[nOutLen] = c;
+				szOutput[nOutLen + 1] = '\0';
+			}
+		}
+	}
+}

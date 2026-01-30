@@ -1512,59 +1512,52 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			// ================================================================
 			// 결제금액 안내 멘트 생성 (4분기)
 			// ================================================================
+			char szCC_name_TTS[256] = {0};
 			char szPaymentMent[1024] = {0};
+			bool bCoupon;
+			bool bBonusCash;
 
-			// 할인 적용 여부에 따른 결제금액 안내
-			bool bCoupon = (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 &&
+			ConvertDigitToKorean(pScenario->m_szCC_name, szCC_name_TTS, sizeof(szCC_name_TTS));
+
+			bCoupon = (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 &&
 							strlen(pScenario->m_szCouponName) > 0);
-			bool bBonusCash = (pScenario->m_nBonusCashUseAmt > 0);
+			bBonusCash = (pScenario->m_nBonusCashUseAmt > 0);
 
 			if (bCoupon && bBonusCash) {
-				// 쿠폰 + 보너스캐시 둘 다 적용
 				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
-					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
-					"%s님께서 보유하신 %s 쿠폰과 보너스 캐시 %d원이 적용되어 "
-					"최종 결제 금액은 %d원입니다.",
-					pScenario->m_szCC_name,
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은, %s님께서 보유하신 %s과 보너스 캐시 %d원이 적용되어, 최종 결제 금액은 %d원입니다.",
+					szCC_name_TTS,
 					pScenario->m_szMx_name,
 					pScenario->m_szCC_Prod_Desc,
-					pScenario->m_szCC_name,
+					szCC_name_TTS,
 					pScenario->m_szCouponName,
 					pScenario->m_nBonusCashUseAmt,
 					pScenario->m_nAmount);
 			}
 			else if (bCoupon) {
-				// 쿠폰만 적용
 				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
-					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
-					"%s님께서 보유하신 %s 쿠폰이 적용되어 "
-					"최종 결제 금액은 %d원입니다.",
-					pScenario->m_szCC_name,
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은, %s님께서 보유하신 %s이 적용되어 최종 결제 금액은 %d원입니다.",				
+					szCC_name_TTS,
 					pScenario->m_szMx_name,
 					pScenario->m_szCC_Prod_Desc,
-					pScenario->m_szCC_name,
+					szCC_name_TTS,
 					pScenario->m_szCouponName,
 					pScenario->m_nAmount);
 			}
 			else if (bBonusCash) {
-				// 보너스캐시만 적용
 				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
-					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은 "
-					"%s님께서 보유하신 보너스 캐시 %d원이 적용되어 "
-					"최종 결제 금액은 %d원입니다.",
-					pScenario->m_szCC_name,
+					"%s 고객님, %s에서, 주문하신 %s의 결제 금액은, %s님께서 보유하신 보너스 캐시 %d원이 적용되어, 최종 결제 금액은 %d원입니다.",
+					szCC_name_TTS,
 					pScenario->m_szMx_name,
 					pScenario->m_szCC_Prod_Desc,
-					pScenario->m_szCC_name,
+					szCC_name_TTS,
 					pScenario->m_nBonusCashUseAmt,
 					pScenario->m_nAmount);
 			}
 			else {
-				// 할인 없음 (기본)
 				sprintf_s(szPaymentMent, sizeof(szPaymentMent),
-					"%s 고객님, %s에서, 주문하신 %s의 "
-					"결제하실 금액은 %d원입니다.",
-					pScenario->m_szCC_name,
+					"%s 고객님, %s에서, 주문하신 %s의 결제하실 금액은 %d원입니다.",
+					szCC_name_TTS,
 					pScenario->m_szMx_name,
 					pScenario->m_szCC_Prod_Desc,
 					pScenario->m_nAmount);
@@ -1589,23 +1582,21 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 				// 교육상품
 				xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형=EDUCATION -> 해지 불가 안내", localCh);
 				strcpy_s(szTermsMent, sizeof(szTermsMent),
-					"본 상품은 교육 상품으로 결제 후 해지가 불가능합니다. "
+					"본 상품은 교육 상품으로, 결제 후에는 해지가 불가능합니다. "
 					"또한, 무료로 제공되는 서비스는 중도 해지 및 일시 정지 파일 양도가 불가합니다.");
 			}
 			else {
 				// 일반상품 (SERVICE 또는 기타)
 				xprintf("[CH:%03d] ALLAT_getOrderInfo: 상품유형=SERVICE(기본) -> 해지수수료 안내", localCh);
 				strcpy_s(szTermsMent, sizeof(szTermsMent),
-					"서비스 중도해지 시 해지일까지 이용요금과 해지수수료 10퍼센트와 "
-					"제공받으신 사은품 정가가 함께 차감됩니다.");
-
+					"서비스 중도해지시, 해지일까지의 이용요금과 해지수수료 10퍼센트와, 제공받으신 사은품 정가가 함께 차감됩니다.");
 				// 쿠폰/보너스캐시 사용 시 소멸 안내 추가 (3분기)
 				if (bCoupon && bBonusCash) {
 					// 쿠폰 + 보너스캐시 둘 다 있는 경우
 					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰+보너스캐시 사용 -> 소멸 안내 추가", localCh);
 					char szExpireMent[256] = {0};
 					sprintf_s(szExpireMent, sizeof(szExpireMent),
-						" 또한, 자동 결제 시 적용되는 %s 쿠폰과 보너스캐시 %d원은 소멸됨을 알려드립니다.",
+						" 또한, 자동 결제 시 적용되는 %s과 보너스캐시 %d원은 소멸됨을 알려드립니다.",
 						pScenario->m_szCouponName,
 						pScenario->m_nBonusCashUseAmt);
 					strcat_s(szTermsMent, sizeof(szTermsMent), szExpireMent);
@@ -1615,7 +1606,7 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 					xprintf("[CH:%03d] ALLAT_getOrderInfo: 쿠폰만 사용 -> 소멸 안내 추가", localCh);
 					char szExpireMent[256] = {0};
 					sprintf_s(szExpireMent, sizeof(szExpireMent),
-						" 또한, 자동 결제 시 적용되는 %s 쿠폰이 소멸됨을 알려드립니다.",
+						" 또한, 자동 결제 시 적용되는 %s이 소멸됨을 알려드립니다.",
 						pScenario->m_szCouponName);
 					strcat_s(szTermsMent, sizeof(szTermsMent), szExpireMent);
 				}
@@ -1634,7 +1625,7 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			// 투자 유의사항 안내
 			// ================================================================
 			const char* szInvestMent =
-				"또한, 한국경제티비와, 파트너는, 금융투자업자가 아닌, 유사투자자문업자로, "
+				"또한, 한국경제티비와 파트너는 금융투자업자가 아닌 유사투자자문업자로, "
 				"개별적인 투자 상담과 자금 운영이 불가하며, "
 				"원금 손실이 발생할 수 있고, 그 손실은 투자자에게 귀속됩니다.";
 

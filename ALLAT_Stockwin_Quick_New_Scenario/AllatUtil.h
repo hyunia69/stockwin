@@ -43,4 +43,8 @@ void getValue(const char* sKey, const char* sMsg, char *sRet, int nLen);
 void SSL_init();
 void SSL_free_comp_methods();
 
+// 숫자를 한글로 변환 (TTS용)
+// 예: "SW2637262148" → "SW이육삼칠이육이일사팔"
+void ConvertDigitToKorean(const char* szInput, char* szOutput, int nOutputSize);
+
 #endif
