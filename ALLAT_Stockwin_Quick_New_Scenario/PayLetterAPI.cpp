@@ -470,6 +470,10 @@ int PL_HttpPost(const char* endpoint, const char* jsonBody,
 
     pSession = new CInternetSession(_T("PayLetterAPI/1.0"));
 
+    pSession->SetOption(INTERNET_OPTION_CONNECT_TIMEOUT, 3000);
+    pSession->SetOption(INTERNET_OPTION_SEND_TIMEOUT, 3000);
+    pSession->SetOption(INTERNET_OPTION_RECEIVE_TIMEOUT, 5000);
+
     try {
         // URL 조립
         sprintf_s(fullUrl, sizeof(fullUrl), "%s%s", g_plConfig.baseUrl, endpoint);

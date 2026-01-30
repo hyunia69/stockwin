@@ -1109,7 +1109,7 @@ unsigned int __stdcall PL_InfoOrderReq_Process(void *data)
 	// ========================================================================
 	if (strcmp(pScenario->m_szCouponUseFlag, "Y") == 0 || pScenario->m_nBonusCashUseAmt > 0)
 	{
-		pScenario->m_bNeedRollback = TRUE;
+		InterlockedExchange(&pScenario->m_bNeedRollback, TRUE);
 		xprintf("[CH:%03d] PL_InfoOrderReq: 롤백 플래그 설정 (coupon=%s, bonusCash=%d)",
 				ch, pScenario->m_szCouponUseFlag, pScenario->m_nBonusCashUseAmt);
 	}

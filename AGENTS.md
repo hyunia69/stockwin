@@ -14,10 +14,40 @@
 모든 소스 코드 파일 (.cpp, .h, .c 등)은 반드시 UTF-8 with BOM 인코딩이어야 합니다.
 ```
 
-- 파일 생성/수정 시 UTF-8 BOM 인코딩 확인 필수
-- BOM 없는 UTF-8 또는 다른 인코딩(EUC-KR, CP949 등) 사용 금지
-- 파일 저장 전 인코딩 검증 필요
-- 인코딩 변환 필요 시: `utils/convert_encoding.py` 스크립트 사용
+#### 필수 절차 (매 파일 수정 시 반드시 수행)
+
+**수정 전:**
+```bash
+# 1. 기존 인코딩 확인
+file <파일명>
+# 2. BOM 존재 여부 확인 (efbbbf가 있어야 함)
+head -c 3 <파일명> | xxd -p
+```
+
+**수정 후:**
+```bash
+# 3. BOM 확인 (efbbbf가 아니면 추가 필요)
+head -c 3 <파일명> | xxd -p
+
+# 4. BOM이 없으면 추가
+sed -i '1s/^/\xEF\xBB\xBF/' <파일명>
+
+# 5. 최종 확인
+file <파일명>  # "UTF-8 (with BOM)" 출력되어야 함
+```
+
+#### 금지 사항
+- BOM 없는 UTF-8 사용 금지
+- EUC-KR, CP949 등 다른 인코딩 사용 금지
+- 인코딩 확인 없이 파일 수정 금지
+
+#### 일괄 변환 (여러 파일 수정 시)
+```bash
+for f in <파일목록>; do
+  sed -i '1s/^\xEF\xBB\xBF//' "$f" 2>/dev/null  # 기존 BOM 제거
+  sed -i '1s/^/\xEF\xBB\xBF/' "$f"              # 새 BOM 추가
+done
+```
 
 ### 2. Git Auto Commit 금지
 

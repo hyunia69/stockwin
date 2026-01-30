@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 *																			*
 *	주   S E R V I C E	J O B S 											*
 *																			*
@@ -2307,8 +2307,7 @@ int CALLAT_Hangung_Quick_Scenario::ScenarioInit(LPMTP *Port, char *ArsType)
 	//curyport = Port;
 	//IScenario_leave_handler();
 	
-	// 롤백 관련 플래그 초기화
-	m_bNeedRollback = FALSE;
+	InterlockedExchange(&m_bNeedRollback, FALSE);
 	InterlockedExchange(&m_bPaymentApproved, FALSE);
 	
 	return 0;
@@ -2375,11 +2374,9 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 		}
 	}
 
-	// ========================================================================
-	// 예약 결제 롤백 처리 (캐시/쿠폰 사용 시)
-	// ========================================================================
+	LONG needRollback = InterlockedCompareExchange(&m_bNeedRollback, 0, 0);
 	LONG paymentApproved = InterlockedCompareExchange(&m_bPaymentApproved, 0, 0);
-	if (m_bNeedRollback && !paymentApproved)
+	if (needRollback && !paymentApproved)
 	{
 		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)");
 	    if (xprintf) xprintf("[CH:%03d] [AHN] DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)",localCh);
@@ -2404,8 +2401,7 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 				if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback failed (result=%d)", localCh, rollbackResult);
 			}
 
-			// 중복 호출 방지
-			m_bNeedRollback = FALSE;
+			InterlockedExchange(&m_bNeedRollback, FALSE);
 			if (info_printf) info_printf(localCh, "DisConnectProcess > m_bNeedRollback reset to FALSE");
 		}
 		else
@@ -2414,12 +2410,12 @@ int CALLAT_Hangung_Quick_Scenario::DisConnectProcess()
 				localCh, m_szMx_issue_no, m_szMemberId);
 		}
 	}
-	else if (m_bNeedRollback && m_bPaymentApproved)
+	else if (needRollback && paymentApproved)
 	{
 		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback skipped - payment was approved");
 		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > No rollback needed (payment approved)", localCh);
 	}
-	else if (!m_bNeedRollback)
+	else if (!needRollback)
 	{
 		if (info_printf) info_printf(localCh, "DisConnectProcess > No rollback needed (cache/coupon not used)");
 	}
