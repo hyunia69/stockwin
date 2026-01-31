@@ -62,6 +62,22 @@ done
 
 ---
 
+## 🎯 현재 작업 대상 (ACTIVE WORKING DIRECTORY) 🎯
+
+```
+⚠️ 현재 작업 디렉토리: ALLAT_Stockwin_Billkey_New_Scenario/
+⚠️ 주의: ALLAT_Stockwin_Quick_New_Scenario/ 는 작업 대상이 아닙니다!
+```
+
+**절대 헷갈리지 마세요:**
+- ✅ 수정 대상: `ALLAT_Stockwin_Billkey_New_Scenario/` (Billkey 시나리오)
+- ❌ 수정 금지: `ALLAT_Stockwin_Quick_New_Scenario/` (Quick 시나리오 - 참고용)
+
+Quick 시나리오는 비슷한 구조를 가지고 있어 참고할 수 있지만, 
+**모든 코드 수정은 반드시 Billkey_New_Scenario 디렉토리에서만** 수행합니다.
+
+---
+
 ## 프로젝트 개요
 
 한국경제TV(WowTV)용 ALLAT 결제 연동 ARS 시나리오 DLL입니다.
@@ -230,11 +246,20 @@ int STDMETHODCALLTYPE jobArs(int state)
 
 ## 중요 사항
 
-1. **범위**: `ALLAT_Stockwin_Quick_New_Scenario`만 현재 개발 대상입니다
+1. **범위**: `ALLAT_Stockwin_Billkey_New_Scenario`만 현재 개발 대상입니다
 2. **문서**: `.md` 파일은 `claudedocs/` 폴더에 저장하세요
 3. **유틸리티**: Python 스크립트는 `utils/` 폴더에 저장하세요
 4. **DB 스키마**: `claudedocs/DB_SCHEMA_ALLAT.md` 참조하세요
 5. **절대 커밋 금지**: `.env` 파일 (자격 증명 포함)
+
+## 참조 문서
+
+| 문서 | 경로 | 설명 |
+|------|------|------|
+| DB 스키마 | `claudedocs/DB_SCHEMA_ALLAT.md` | ALLAT 관련 테이블 스키마 |
+| 시나리오 명세 | `claudedocs/NEW_SPEC_SCENARIO.md` | ARS 시나리오별 음성 안내 및 흐름 정의 |
+| REST API 스펙 | `claudedocs/NEW_SPEC_PL_API.md` | PayLetter REST API 엔드포인트 및 응답 형식 |
+| Billkey REST API 구현 | `claudedocs/IMPL_BILLKEY_REST_API.md` | Billkey 시나리오 REST API 전환 구현 상세 |
 
 ## 자주 사용하는 패턴
 

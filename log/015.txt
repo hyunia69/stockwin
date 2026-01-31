@@ -1,0 +1,21 @@
+[22:02:17.901] Session_Key:[019669320260131220210432]- PL_BatchOrderInfoReq_Process: DNIS DB 연결 시도 (IP=211.196.157.121,1433, DB=arspg_web)
+[22:02:24.792] Session_Key:[019669320260131220210432]- State = ST_TALKING, GCEvent = GCEV_DISCONNECTED
+[22:02:24.792] Session_Key:[019669320260131220210432]- _win_is_channelbusy() => STATE(2) 
+[22:02:24.792] Session_Key:[019669320260131220210432]- hang_up() => stopchan()
+[22:02:24.792] Session_Key:[019669320260131220210432]- _win_is_channelbusy() => STATE(2) 
+[22:02:24.948] Session_Key:[019669320260131220210432]- Unknown event (81).....ignored
+[22:02:24.948] Session_Key:[019669320260131220210432]- process: State = ST_STOP, Event = TW_STOP (chanID:19)
+[22:02:24.948] Session_Key:[019669320260131220210432]- process: call_function
+[22:02:24.948] Session_Key:[019669320260131220210432]- call_function: call_srvp
+[22:02:24.964] Session_Key:[019669320260131220210432]- gc_hookon()=>gc_DropCall호출
+[22:02:25.042] Session_Key:[019669320260131220210432]- State = ST_TALKING, GCEvent = GCEV_DROPCALL
+[22:02:25.042] Session_Key:[019669320260131220210432]- ST_IDLE 클린채널해준다Start(state:13)
+[22:02:25.042] Session_Key:[019669320260131220210432]- clean_channel START
+[22:02:25.042] Session_Key:[019669320260131220210432]- sc_disconnectDTI() 이미 브릿지해제
+[22:02:25.057] Session_Key:[019669320260131220210432]- clean_channel > save_log 
+[22:02:25.057] Session_Key:[019669320260131220210432]- save_log START
+[22:02:25.057] Session_Key:[019669320260131220210432]- 1. 획득한 DLL이 기동 중인지 판단.(ALLAT_Stockwin_Billkey_New_Scenario.dll)
+[22:02:25.057] Session_Key:[019669320260131220210432]- 1. 획득한 DLL이 기동 중인 채널 ....
+[22:02:25.057] Session_Key:[019669320260131220210432]- if (bRet).(ALLAT_Stockwin_Billkey_New_Scenario.dll)
+[22:02:25.057] Session_Key:[019669320260131220210432]- DisConnectProcess START
+[22:02:25.073] Session_Key:[019669320260131220210432]- Allat DB Access 동작 중.... 
