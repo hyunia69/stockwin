@@ -72,6 +72,8 @@ public:
 	BOOL     setPayLog(Card_ResInfo ag_Card_ResInfo);
 	BOOL     upOrderPayState(char *sxResultCode, char *szResultMsg, char *szMoid, char *szMid);
 
+	int      GetFreeTrialAttrByDnis(CString szDnis, char* szAttrOut, int nAttrSize);
+
 	CALLAT_WOWTV_Billkey_Easy_Scenario  *m_pScenario;
 };
 

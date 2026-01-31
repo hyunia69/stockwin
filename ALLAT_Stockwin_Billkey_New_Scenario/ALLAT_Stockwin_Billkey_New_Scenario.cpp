@@ -14,6 +14,7 @@
 #include "ADODB.h"
 #include "ALLAT_Stockwin_Billkey_New_Scenario.h"
 #include "KISA_SHA256.h"
+#include "PayLetterAPI.h"
 #define  ALLAT_MID      "allat_testars"
 #define  ALLAT_LICENSEKEY "4d184eff535106b071ada6b9f1940a59"
 #define  ALLAT_CANCELPWD   "123456"
@@ -73,11 +74,13 @@ extern int  upOrderPayState_host(int holdm);
 extern int   getSMSOrderInfo_host(int holdm);
 extern int bill_delTcp_host(int holdm);
 extern int getTcpOrderInfo_host(int holdm);
+extern int getOrderInfo_host_wrapper(int holdm);  // REST API wrapper (2026.02.01 추가)
 
 int ALLAT_ArsScenarioStart(/* [in] */int state);
 int ALLAT_SMSScenarioStart(/* [in] */int state);
 int ALLAT_CID_ScenarioStart(/* [in] */int state);
 int ALLAT_CIA_ScenarioStart(/* [in] */int state);
+int ALLAT_CQS_ScenarioStart(/* [in] */int state);
 int ALLAT_consent(int state);
 int ALLAT_InstallmentCConfrim(int state);
 
@@ -2290,6 +2293,17 @@ int ALLAT_getOrderInfo(/* [in] */int state)
 			pScenario->m_szpsrtner_nm);
 		eprintf("ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> 파트너명(%s)", state,
 			pScenario->m_szpsrtner_nm);
+
+		{
+			int nSkipPartnerConsent = ::GetPrivateProfileInt("SCENARIO_OPTIONS", "SKIP_PARTNER_CONSENT", 0, PARAINI);
+			if (nSkipPartnerConsent == 1)
+			{
+				info_printf(localCh, "ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> SKIP_PARTNER_CONSENT=1, 동의 멘트 스킵", state);
+				eprintf("ALLAT_WOWTV_Quick_getOrderInfo [%d] 동의서 안내 부> SKIP_PARTNER_CONSENT=1, 동의 멘트 스킵", state);
+				return ALLAT_getOrderInfo(9);
+			}
+		}
+
 		// 이미 동의서에 동의한 고객은 해당 멘트를 건너 뛴다.
 		if (strcmp(pScenario->m_szrenew_flag, "Y") == 0)
 		{
@@ -3284,7 +3298,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			return ALLAT_CIA_ScenarioStart(11);
 		}
 		setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-		return getTcpOrderInfo_host(90);
+		return getOrderInfo_host_wrapper(90);
 
 
 
@@ -3377,7 +3391,7 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 			eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
 
 			setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
-			return getTcpOrderInfo_host(90);
+			return getOrderInfo_host_wrapper(90);
 		}
 		else if (c == '2')//아니오
 		{
@@ -3393,6 +3407,168 @@ int ALLAT_CIA_ScenarioStart(/* [in] */int state)
 	default:
 		info_printf(localCh, "ALLAT_WOWTV_Quick_CIAScenarioStart [%d]  C고객 회원 번호 8자리 번호 입력 부> 시나리오 아이디 오류", state);
 		eprintf("ALLAT_WOWTV_Quick_CIAScenarioStart[%d]  고객 회원 번호 8자리 번호 입력 부>시나리오 아이디 오류", state);
+		set_guide(399);
+		setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
+		return send_guide(NODTMF);
+	}
+	return 0;
+}
+
+int ALLAT_CQS_ScenarioStart(/* [in] */int state)
+{
+	int		c = 0;
+	int     localCh = (*lpmt)->chanID;
+	CALLAT_WOWTV_Billkey_Easy_Scenario *pScenario = (CALLAT_WOWTV_Billkey_Easy_Scenario *)((*lpmt)->pScenario);
+
+	if (*lpmt)
+	{
+		c = *((*lpmt)->dtmfs);
+		(*lpmt)->PrevCall = ALLAT_CQS_ScenarioStart;
+		(*lpmt)->prevState = state;
+	}
+	memset(pScenario->m_szpaymethod, 0x00, sizeof(pScenario->m_szpaymethod));
+	memcpy(pScenario->m_szpaymethod, "CARD", sizeof(pScenario->m_szpaymethod) - 1);
+
+	switch (state)
+	{
+	case 0:
+	{
+		pScenario->m_nRetryCnt = 0;
+
+		char TempPath[1024 + 1] = { 0x00, };
+		new_guide();
+		pScenario->InputErrCnt = 0;
+		info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 인사말...", state);
+		eprintf("ALLAT_CQS_ScenarioStart [%d] 인사말", state);
+
+		sprintf_s(TempPath, sizeof(TempPath), "audio\\shop_intro\\wownet_intro", (*lpmt)->dnis);
+		set_guide(VOC_WAVE_ID, TempPath);
+		setPostfunc(POST_PLAY, ALLAT_CQS_ScenarioStart, 1, 0);
+		return send_guide(NODTMF);
+	}
+
+	case 1:
+		new_guide();
+		memset(pScenario->m_szInputTel, 0x00, sizeof(pScenario->m_szInputTel));
+		memcpy(pScenario->m_szInputTel, (*lpmt)->ani, sizeof(pScenario->m_szInputTel) - 1);
+
+		if (strncmp(pScenario->m_szInputTel, "010", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "011", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "012", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "016", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "017", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "018", 3) != 0 &&
+			strncmp(pScenario->m_szInputTel, "019", 3) != 0)
+		{
+			return ALLAT_CQS_ScenarioStart(11);
+		}
+		setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
+		return getOrderInfo_host_wrapper(90);
+
+	case 11:
+		new_guide();
+		info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부...", state);
+		eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부", state);
+		set_guide(VOC_WAVE_ID, "ment\\_common\\common_audio\\input_telnum_start");
+		setPostfunc(POST_DTMF, ALLAT_CQS_ScenarioStart, 12, 0);
+		return send_guide(13);
+
+	case 12:
+		if ((check_validform("*#:7:12", (*lpmt)->refinfo)) < 0)
+		{
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>잘못 누르셨습니다.....", state);
+			return send_error();
+		}
+		if (strncmp((*lpmt)->dtmfs, "010", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "011", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "012", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "016", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "017", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "018", 3) != 0 &&
+			strncmp((*lpmt)->dtmfs, "019", 3) != 0)
+		{
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부(형식 오류)>잘못 누르셨습니다.....", state);
+			return send_error();
+		}
+		new_guide();
+		memset(pScenario->m_szInputTel, 0x00, sizeof(pScenario->m_szInputTel));
+		memcpy(pScenario->m_szInputTel, (*lpmt)->refinfo, sizeof(pScenario->m_szInputTel) - 1);
+
+		info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
+		eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부(TTS)", state);
+		if (TTS_Play)
+		{
+			char TTSBuf[1024 + 1] = { 0x00, };
+			int TTsLen = strlen((*lpmt)->refinfo);
+			for (int nRep = 0, nRep2 = 0;; nRep++)
+			{
+				if (TTsLen < 1) break;
+				TTSBuf[nRep2++] = (char)*((*lpmt)->refinfo + nRep);
+				TTSBuf[nRep2++] = ',';
+				TTsLen--;
+			}
+
+			setPostfunc(POST_NET, ALLAT_CQS_ScenarioStart, 13, 0);
+			return TTS_Play((*lpmt)->chanID, 92, "고객님께서 누르신 전화번호는, %s 번 입니다.", TTSBuf);
+		}
+		else
+		{
+			set_guide(399);
+			setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
+			return send_guide(NODTMF);
+		}
+	case 13:
+		if (pScenario->m_TTSAccess == -1)
+		{
+			new_guide();
+			info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 현재 통화량이 많아!지연상황이 발생..", state);
+			set_guide(VOC_WAVE_ID, "ment\\TTS_TimeOut");
+			setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
+			return send_guide(NODTMF);
+		}
+		if (strlen(pScenario->szTTSFile) > 0)
+		{
+			new_guide();
+			char TTSFile[2048 + 1] = { 0x00, };
+			sprintf_s(TTSFile, sizeof(TTSFile), "%s", pScenario->szTTSFile);
+
+			set_guide(VOC_TTS_ID, TTSFile);
+			set_guide(VOC_WAVE_ID, "ment/_common/common_audio/input_confirm");
+			memset(pScenario->szTTSFile, 0x00, sizeof(pScenario->szTTSFile));
+		}
+		setPostfunc(POST_DTMF, ALLAT_CQS_ScenarioStart, 14, 0);
+		return send_guide(1);
+	case 14:
+		if (check_validdtmf && !check_validdtmf(c, "12"))
+		{
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>잘못 누르셨습니다....", state);
+			return send_error();
+		}
+		new_guide();
+
+		if (c == '1')
+		{
+			info_printf(localCh, "ALLAT_CQS_ScenarioStart[%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>맞습니다.", state);
+
+			setPostfunc(POST_NET, ALLAT_getOrderInfo, 0, 0);
+			return getOrderInfo_host_wrapper(90);
+		}
+		else if (c == '2')
+		{
+			info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
+			eprintf("ALLAT_CQS_ScenarioStart [%d] 고객 전화 번호 입력 부>확인 부> 확인 부>아니오", state);
+
+			return ALLAT_CQS_ScenarioStart(11);
+		}
+
+	case 0xffff:
+		new_guide();
+		return  goto_hookon();
+	default:
+		info_printf(localCh, "ALLAT_CQS_ScenarioStart [%d] 시나리오 아이디 오류", state);
+		eprintf("ALLAT_CQS_ScenarioStart[%d] 시나리오 아이디 오류", state);
 		set_guide(399);
 		setPostfunc(POST_PLAY, ALLAT_ExitSvc, 0, 0);
 		return send_guide(NODTMF);
@@ -3418,10 +3594,19 @@ CALLAT_WOWTV_Billkey_Easy_Scenario::CALLAT_WOWTV_Billkey_Easy_Scenario()
 
 CALLAT_WOWTV_Billkey_Easy_Scenario::~CALLAT_WOWTV_Billkey_Easy_Scenario()
 {
+	if (!m_bDisconnectProcessed)
+	{
+		if (xprintf) xprintf("[CH:%03d] ~Destructor > Calling DisConnectProcess", nChan);
+		this->DisConnectProcess();
+	}
+
 	if (m_hThread)
 	{
 		xprintf("[CH:%03d] Allat DB Access 동작 중.... ", nChan);
-		::WaitForSingleObject(m_hThread, INFINITE);
+		DWORD waitResult1 = ::WaitForSingleObject(m_hThread, 10000);
+		if (waitResult1 == WAIT_TIMEOUT) {
+			xprintf("[CH:%03d] ~Destructor > DB thread wait timeout (10s)", nChan);
+		}
 		CloseHandle(m_hThread);
 		m_hThread = NULL;
 		xprintf("[CH:%03d] Allat DB Access 중지.... ", nChan);
@@ -3429,13 +3614,93 @@ CALLAT_WOWTV_Billkey_Easy_Scenario::~CALLAT_WOWTV_Billkey_Easy_Scenario()
 	if (m_hPayThread)
 	{
 		xprintf("[CH:%03d] Allat PAYMENT 동작 중.... ", nChan);
-		::WaitForSingleObject(m_hPayThread, INFINITE);
+		DWORD waitResult2 = ::WaitForSingleObject(m_hPayThread, 10000);
+		if (waitResult2 == WAIT_TIMEOUT) {
+			xprintf("[CH:%03d] ~Destructor > Payment thread wait timeout (10s)", nChan);
+		}
 		CloseHandle(m_hPayThread);
 		m_hPayThread = NULL;
 		xprintf("[CH:%03d] Allat PAYMENT 중지.... ", nChan);
 
 	}
 	if (m_Myport) m_Myport->ppftbl[POST_NET].postcode = HI_OK;
+}
+
+int CALLAT_WOWTV_Billkey_Easy_Scenario::DisConnectProcess()
+{
+	int localCh = nChan;
+
+	if (m_bDisconnectProcessed)
+	{
+		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Already processed, skipping", localCh);
+		return 0;
+	}
+	m_bDisconnectProcessed = TRUE;
+
+	if (info_printf) info_printf(localCh, "DisConnectProcess START");
+	if (xprintf) xprintf("[CH:%03d] DisConnectProcess START", localCh);
+
+	if (m_hPayThread)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Waiting for payment thread completion (max 5000ms)");
+		DWORD waitResult = ::WaitForSingleObject(m_hPayThread, 5000);
+		if (waitResult == WAIT_TIMEOUT)
+		{
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Payment thread wait timeout", localCh);
+		}
+		else if (waitResult == WAIT_OBJECT_0)
+		{
+			if (info_printf) info_printf(localCh, "DisConnectProcess > Payment thread completed successfully");
+		}
+	}
+
+	LONG needRollback = InterlockedCompareExchange(&m_bNeedRollback, 0, 0);
+	LONG paymentApproved = InterlockedCompareExchange(&m_bPaymentApproved, 0, 0);
+	if (needRollback && !paymentApproved)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback condition met (m_bNeedRollback=TRUE, m_bPaymentApproved=FALSE)");
+		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback condition met", localCh);
+
+		if (m_szMx_issue_no[0] != '\0' && m_szMemberId[0] != '\0')
+		{
+			if (info_printf) info_printf(localCh, "DisConnectProcess > Calling PL_ReserveRollback (OrderNo=%s, MemberId=%s)", 
+				m_szMx_issue_no, m_szMemberId);
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Executing rollback for OrderNo=%s", localCh, m_szMx_issue_no);
+
+			int rollbackResult = PL_ReserveRollback(m_szMx_issue_no, m_szMemberId);
+			
+			if (rollbackResult == 0)
+			{
+				if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback succeeded");
+				if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback completed successfully", localCh);
+			}
+			else
+			{
+				if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback failed (result=%d)", localCh, rollbackResult);
+			}
+
+			InterlockedExchange(&m_bNeedRollback, FALSE);
+			if (info_printf) info_printf(localCh, "DisConnectProcess > m_bNeedRollback reset to FALSE");
+		}
+		else
+		{
+			if (xprintf) xprintf("[CH:%03d] DisConnectProcess > Rollback skipped - invalid OrderNo or MemberId (OrderNo=%s, MemberId=%s)", 
+				localCh, m_szMx_issue_no, m_szMemberId);
+		}
+	}
+	else if (needRollback && paymentApproved)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > Rollback skipped - payment was approved");
+		if (xprintf) xprintf("[CH:%03d] DisConnectProcess > No rollback needed (payment approved)", localCh);
+	}
+	else if (!needRollback)
+	{
+		if (info_printf) info_printf(localCh, "DisConnectProcess > No rollback needed (cache/coupon not used)");
+	}
+
+	if (info_printf) info_printf(localCh, "DisConnectProcess END");
+
+	return 0;
 }
 
 int CALLAT_WOWTV_Billkey_Easy_Scenario::ScenarioInit(LPMTP *Port, char *ArsType)
@@ -3474,6 +3739,7 @@ int CALLAT_WOWTV_Billkey_Easy_Scenario::jobArs(/* [in] */int state)
 	else if (strcmp(szArsType, "SMS") == 0) return ALLAT_SMSScenarioStart(0);
 	else if (strcmp(szArsType, "CID") == 0) return  ALLAT_CID_ScenarioStart(0);
 	else if (strcmp(szArsType, "CIA") == 0) return  ALLAT_CIA_ScenarioStart(0);
+	else if (strcmp(szArsType, "CQS") == 0) return  ALLAT_CQS_ScenarioStart(0);
 
 	return ALLAT_jobArs(0);
 }

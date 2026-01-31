@@ -1,21 +1,370 @@
-[22:02:17.901] Session_Key:[019669320260131220210432]- PL_BatchOrderInfoReq_Process: DNIS DB 연결 시도 (IP=211.196.157.121,1433, DB=arspg_web)
-[22:02:24.792] Session_Key:[019669320260131220210432]- State = ST_TALKING, GCEvent = GCEV_DISCONNECTED
-[22:02:24.792] Session_Key:[019669320260131220210432]- _win_is_channelbusy() => STATE(2) 
-[22:02:24.792] Session_Key:[019669320260131220210432]- hang_up() => stopchan()
-[22:02:24.792] Session_Key:[019669320260131220210432]- _win_is_channelbusy() => STATE(2) 
-[22:02:24.948] Session_Key:[019669320260131220210432]- Unknown event (81).....ignored
-[22:02:24.948] Session_Key:[019669320260131220210432]- process: State = ST_STOP, Event = TW_STOP (chanID:19)
-[22:02:24.948] Session_Key:[019669320260131220210432]- process: call_function
-[22:02:24.948] Session_Key:[019669320260131220210432]- call_function: call_srvp
-[22:02:24.964] Session_Key:[019669320260131220210432]- gc_hookon()=>gc_DropCall호출
-[22:02:25.042] Session_Key:[019669320260131220210432]- State = ST_TALKING, GCEvent = GCEV_DROPCALL
-[22:02:25.042] Session_Key:[019669320260131220210432]- ST_IDLE 클린채널해준다Start(state:13)
-[22:02:25.042] Session_Key:[019669320260131220210432]- clean_channel START
-[22:02:25.042] Session_Key:[019669320260131220210432]- sc_disconnectDTI() 이미 브릿지해제
-[22:02:25.057] Session_Key:[019669320260131220210432]- clean_channel > save_log 
-[22:02:25.057] Session_Key:[019669320260131220210432]- save_log START
-[22:02:25.057] Session_Key:[019669320260131220210432]- 1. 획득한 DLL이 기동 중인지 판단.(ALLAT_Stockwin_Billkey_New_Scenario.dll)
-[22:02:25.057] Session_Key:[019669320260131220210432]- 1. 획득한 DLL이 기동 중인 채널 ....
-[22:02:25.057] Session_Key:[019669320260131220210432]- if (bRet).(ALLAT_Stockwin_Billkey_New_Scenario.dll)
-[22:02:25.057] Session_Key:[019669320260131220210432]- DisConnectProcess START
-[22:02:25.073] Session_Key:[019669320260131220210432]- Allat DB Access 동작 중.... 
+[02:17:32.921] Session_Key:[008669320260201021732921]- =================> DNIS =6693 received for CRN = 0x602001b
+[02:17:32.921] Session_Key:[008669320260201021732921]- State = ST_NULL, GCEvent = GCEV_OFFERED
+[02:17:32.921] Session_Key:[008669320260201021732921]- ANI 01024020684
+[02:17:33.078] Session_Key:[008669320260201021732921]- State = ST_OFFERED, GCEvent = GCEV_ACCEPT
+[02:17:33.297] Session_Key:[008669320260201021732921]- State = ST_OFFERED, GCEvent = GCEV_ANSWERED
+[02:17:33.297] Session_Key:[008669320260201021732921]- Call detected -> start service GCEV_CONNECTED or GCEV_ANSWERED
+[02:17:33.297] Session_Key:[008669320260201021732921]- start_log
+[02:17:33.297] Session_Key:[008669320260201021732921]- 콜인입 : DNIS[6693]:ANI[01024020684]
+[02:17:33.312] Session_Key:[008669320260201021732921]- 콜인입 : 기존 시나리오 초기화 처리 ....
+[02:17:33.312] Session_Key:[008669320260201021732921]- LoadDll [0] DLL AAA 
+[02:17:33.312] Session_Key:[008669320260201021732921]- LoadDll [0] DLL 부
+[02:17:33.312] Session_Key:[008669320260201021732921]- DnisVsDll_Host START
+[02:17:33.312] Session_Key:[008669320260201021732921]- DnisVsDll_Host > set_guide 
+[02:17:33.328] Session_Key:[008669320260201021732921]- set_guide START AAAAA
+[02:17:33.328] Session_Key:[008669320260201021732921]- set_guide (;!)
+[02:17:33.328] Session_Key:[008669320260201021732921]- put_guide START
+[02:17:33.328] Session_Key:[008669320260201021732921]- put_guide if (lpmt->startvindex >= lpmt->vsu))
+[02:17:33.328] Session_Key:[008669320260201021732921]- add_guide() START
+[02:17:33.328] Session_Key:[008669320260201021732921]- add_guide() DEFALUT > DEFALUT
+[02:17:33.343] Session_Key:[008669320260201021732921]- add_guide() if (n > 0)
+[02:17:33.343] Session_Key:[008669320260201021732921]- add_guide() else
+[02:17:33.343] Session_Key:[008669320260201021732921]- put_guid if (lpmt->fType == VOC_ERROR) 그 외 
+[02:17:33.343] Session_Key:[008669320260201021732921]- set_guide END
+[02:17:33.343] Session_Key:[008669320260201021732921]- DnisVsDll_Host > send_guide 
+[02:17:33.343] Session_Key:[008669320260201021732921]- send_guide() 
+[02:17:33.359] Session_Key:[008669320260201021732921]- prepare_send_guide if (mode == NODTMF) lpmt->dtmfact = DA_NOT;
+[02:17:33.359] Session_Key:[008669320260201021732921]- send_guide() ==>   END 
+[02:17:33.359] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:33.359] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:33.359] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:33.359] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:33.359] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:33.375] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:33.375] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:33.375] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:33.375] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:33.375] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:33.375] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:33.390] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:33.390] Session_Key:[008669320260201021732921]- _win_set_playpara > if (lpmt->dtmfact & DA_NOT) 
+[02:17:33.390] Session_Key:[008669320260201021732921]- setTermCondi : 0, 
+[02:17:33.390] Session_Key:[008669320260201021732921]- _win_play(vi:0 , lpmt->vsu:1)
+[02:17:33.390] Session_Key:[008669320260201021732921]- _win_play > if (lpmt->voutp >= lpmt->vsu) vi = lpmt->voutp = lpmt->vsu (vi:0 , lpmt->vsu:1)
+[02:17:33.390] Session_Key:[008669320260201021732921]- _win_play()
+[02:17:33.406] Session_Key:[008669320260201021732921]-  File 재생 목록 File_index[0] FineName[VOC_FIXED], FileHandle[3][3]
+[02:17:33.406] Session_Key:[008669320260201021732921]- showIOTT>iottp[0] -> 4, 3, 104277, 39962
+[02:17:33.406] Session_Key:[008669320260201021732921]- _win_play > 재생 요청 중...
+[02:17:33.406] Session_Key:[008669320260201021732921]- DnisVsDll_Host END
+[02:17:33.406] Session_Key:[008669320260201021732921]- sp_getCommonDnisInfo START
+[02:17:33.422] Session_Key:[008669320260201021732921]- sp_getCommonDnisInfo [ALLAT_Stockwin_Billkey_New_Scenario.dll][CQS]
+[02:17:33.453] Session_Key:[008669320260201021732921]- ADO_Quithostio===START
+[02:17:33.453] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:33.453] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:33.453] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:33.468] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:33.468] Session_Key:[008669320260201021732921]- quitchan
+[02:17:33.468] Session_Key:[008669320260201021732921]- _win_quitchan
+[02:17:33.468] Session_Key:[008669320260201021732921]- sp_getCommonDnisInfo the line service is Success > sp_getCallcenter_TelInfo the line service is Record Count 녀  0
+[02:17:33.468] Session_Key:[008669320260201021732921]- ADO_Quithostio _endthread
+[02:17:33.468] Session_Key:[008669320260201021732921]- sp_getCallcenter_TelInfo END
+[02:17:33.609] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:33.625] Session_Key:[008669320260201021732921]- process: State = ST_GUIDE, Event = TW_STOP (chanID:8)
+[02:17:33.625] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:33.625] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:33.625] Session_Key:[008669320260201021732921]- post_guide mode=1 START
+[02:17:33.625] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM
+[02:17:33.625] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE
+[02:17:33.640] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE:POST_NET
+[02:17:33.640] Session_Key:[008669320260201021732921]- Invalid event retPostfunc START
+[02:17:33.640] Session_Key:[008669320260201021732921]- Invalid event retPostfunc END
+[02:17:33.640] Session_Key:[008669320260201021732921]- LoadDll [1] DLL AAA 
+[02:17:33.640] Session_Key:[008669320260201021732921]- LoadDll [1] DLL 로딩 판별
+[02:17:33.640] Session_Key:[008669320260201021732921]- LoadDll [1] DLL 로딩 판별> 최초 로딩(ALLAT_Stockwin_Billkey_New_Scenario.dll)
+[02:17:34.718] Session_Key:[008669320260201021732921]- LoadDll [1] DLL 로딩 판별> 최초 로딩 성공
+[02:17:34.718] Session_Key:[008669320260201021732921]- LoadDll  DLL 로딩 판별> [ALLAT_Stockwin_Billkey_New_Scenario.dll][CQS]
+[02:17:34.734] Session_Key:[008669320260201021732921]- LoadDll  DLL 로딩 판별> Mapping[ALLAT_Stockwin_Billkey_New_Scenario.dll][CQS]
+[02:17:34.734] Session_Key:[008669320260201021732921]- LoadDll  DLL 로딩 판별> ScenarioInit [ALLAT_Stockwin_Billkey_New_Scenario.dll][CQS]
+[02:17:34.734] Session_Key:[008669320260201021732921]- LoadDll [1] DLL 로딩 판별> 로딩 시나리오(ALLAT_Stockwin_Billkey_New_Scenario.dll: 로딩 회수: 1)
+[02:17:34.734] Session_Key:[008669320260201021732921]- set_guide START AAAAA
+[02:17:34.734] Session_Key:[008669320260201021732921]- set_guide (p쥬?W\)
+[02:17:34.750] Session_Key:[008669320260201021732921]- put_guide START
+[02:17:34.750] Session_Key:[008669320260201021732921]- put_guide if (lpmt->startvindex >= lpmt->vsu))
+[02:17:34.750] Session_Key:[008669320260201021732921]- add_guide() START
+[02:17:34.765] Session_Key:[008669320260201021732921]- add_guide() DEFALUT > DEFALUT
+[02:17:34.765] Session_Key:[008669320260201021732921]- add_guide() if (n > 0)
+[02:17:34.765] Session_Key:[008669320260201021732921]- add_guide() else
+[02:17:34.765] Session_Key:[008669320260201021732921]- put_guid if (lpmt->fType == VOC_ERROR) 그 외 
+[02:17:34.765] Session_Key:[008669320260201021732921]- set_guide END
+[02:17:34.781] Session_Key:[008669320260201021732921]- send_guide() 
+[02:17:34.781] Session_Key:[008669320260201021732921]- prepare_send_guide if (mode == NODTMF) lpmt->dtmfact = DA_NOT;
+[02:17:34.781] Session_Key:[008669320260201021732921]- send_guide() ==>   END 
+[02:17:34.781] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:34.781] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.781] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.781] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.797] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:34.797] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:34.797] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:34.797] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:34.797] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:34.797] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:34.797] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:34.797] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:34.812] Session_Key:[008669320260201021732921]- _win_set_playpara > if (lpmt->dtmfact & DA_NOT) 
+[02:17:34.812] Session_Key:[008669320260201021732921]- setTermCondi : 0, 
+[02:17:34.812] Session_Key:[008669320260201021732921]- _win_play(vi:0 , lpmt->vsu:1)
+[02:17:34.812] Session_Key:[008669320260201021732921]- _win_play > if (lpmt->voutp >= lpmt->vsu) vi = lpmt->voutp = lpmt->vsu (vi:0 , lpmt->vsu:1)
+[02:17:34.812] Session_Key:[008669320260201021732921]- _win_play()
+[02:17:34.812] Session_Key:[008669320260201021732921]-  File 재생 목록 File_index[0] FineName[VOC_FIXED], FileHandle[3][3]
+[02:17:34.828] Session_Key:[008669320260201021732921]- showIOTT>iottp[0] -> 4, 3, 104277, 39962
+[02:17:34.828] Session_Key:[008669320260201021732921]- _win_play > 재생 요청 중...
+[02:17:34.828] Session_Key:[008669320260201021732921]- CallAdd_Host START
+[02:17:34.828] Session_Key:[008669320260201021732921]- CallAdd_Host END
+[02:17:34.828] Session_Key:[008669320260201021732921]- sp_AddCallCnt START
+[02:17:34.843] Session_Key:[008669320260201021732921]- ADO_Quithostio===START
+[02:17:34.843] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:34.843] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:34.843] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:34.843] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:34.859] Session_Key:[008669320260201021732921]- quitchan
+[02:17:34.859] Session_Key:[008669320260201021732921]- _win_quitchan
+[02:17:34.859] Session_Key:[008669320260201021732921]- sp_AddCallCnt the line service is Success...........
+[02:17:34.859] Session_Key:[008669320260201021732921]- ADO_Quithostio _endthread
+[02:17:34.859] Session_Key:[008669320260201021732921]- sp_AddCallCnt END
+[02:17:34.890] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:34.906] Session_Key:[008669320260201021732921]- process: State = ST_GUIDE, Event = TW_STOP (chanID:8)
+[02:17:34.906] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:34.906] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:34.906] Session_Key:[008669320260201021732921]- post_guide mode=1 START
+[02:17:34.906] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM
+[02:17:34.906] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE
+[02:17:34.906] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE:POST_NET
+[02:17:34.922] Session_Key:[008669320260201021732921]- Invalid event retPostfunc START
+[02:17:34.922] Session_Key:[008669320260201021732921]- Invalid event retPostfunc END
+[02:17:34.922] Session_Key:[008669320260201021732921]- LoadDll [3] DLL AAA 
+[02:17:34.922] Session_Key:[008669320260201021732921]- ALLAT_CQS_ScenarioStart [0] 인사말
+[02:17:34.922] Session_Key:[008669320260201021732921]- set_guide START AAAAA
+[02:17:34.922] Session_Key:[008669320260201021732921]- set_guide (섶?섶?)
+[02:17:34.922] Session_Key:[008669320260201021732921]- put_guide START
+[02:17:34.937] Session_Key:[008669320260201021732921]- put_guide if (lpmt->startvindex >= lpmt->vsu))
+[02:17:34.937] Session_Key:[008669320260201021732921]- set_fileguide  default case START
+[02:17:34.937] Session_Key:[008669320260201021732921]- set_fileguide  default case open_playfile(type(24),arg_ptr(섶?섶?) ) 
+[02:17:34.937] Session_Key:[008669320260201021732921]- arg_ptr==>섶?섶?
+[02:17:34.937] Session_Key:[008669320260201021732921]- VOC_WAVE===>
+[02:17:34.953] Session_Key:[008669320260201021732921]- VOC_WAVE===>ment==(audio\shop_intro\wownet_intro)
+[02:17:34.953] Session_Key:[008669320260201021732921]- open_wave: .\voice\wave\audio\shop_intro\wownet_intro.wav ===> OK(File Handle:6)
+[02:17:34.953] Session_Key:[008669320260201021732921]- add_guide() START
+[02:17:34.953] Session_Key:[008669320260201021732921]- add_guide() FILE_PLAY > FILE_FORMAT_WAVE
+[02:17:34.953] Session_Key:[008669320260201021732921]- add_guide() if (n > 0)
+[02:17:34.968] Session_Key:[008669320260201021732921]- add_guide() else
+[02:17:34.968] Session_Key:[008669320260201021732921]- put_guid if (lpmt->fType == VOC_ERROR) 그 외 
+[02:17:34.968] Session_Key:[008669320260201021732921]- set_guide END
+[02:17:34.968] Session_Key:[008669320260201021732921]- send_guide() 
+[02:17:34.968] Session_Key:[008669320260201021732921]- prepare_send_guide if (mode == NODTMF) lpmt->dtmfact = DA_NOT;
+[02:17:34.968] Session_Key:[008669320260201021732921]- send_guide() ==>   END 
+[02:17:34.984] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:34.984] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.984] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.984] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:34.984] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:34.984] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:35.000] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:35.000] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:35.000] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:35.000] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:35.015] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:35.015] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:35.015] Session_Key:[008669320260201021732921]- _win_set_playpara > if (lpmt->dtmfact & DA_NOT) 
+[02:17:35.015] Session_Key:[008669320260201021732921]- setTermCondi : 0, 
+[02:17:35.015] Session_Key:[008669320260201021732921]- _win_play(vi:0 , lpmt->vsu:1)
+[02:17:35.031] Session_Key:[008669320260201021732921]- _win_play > if (lpmt->voutp >= lpmt->vsu) vi = lpmt->voutp = lpmt->vsu (vi:0 , lpmt->vsu:1)
+[02:17:35.031] Session_Key:[008669320260201021732921]- _win_play()
+[02:17:35.031] Session_Key:[008669320260201021732921]-  File 재생 목록 File_index[0] FineName[.\voice\wave\audio\shop_intro\wownet_intro.wav], FileHandle[6][6]
+[02:17:35.031] Session_Key:[008669320260201021732921]- showIOTT>iottp[0] -> 4, 6, 0, -1
+[02:17:35.031] Session_Key:[008669320260201021732921]- _win_play > 재생 요청 중...
+[02:17:39.937] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:39.937] Session_Key:[008669320260201021732921]- process: State = ST_GUIDE, Event = TW_EOF (chanID:8)
+[02:17:39.937] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:39.937] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:39.937] Session_Key:[008669320260201021732921]- post_guide mode=0 START
+[02:17:39.953] Session_Key:[008669320260201021732921]- post_guide mode=0 lpmt->dtmftype == NODTM
+[02:17:39.953] Session_Key:[008669320260201021732921]- Invalid event retPostfunc START
+[02:17:39.953] Session_Key:[008669320260201021732921]- Invalid event retPostfunc END
+[02:17:39.953] Session_Key:[008669320260201021732921]- getOrderInfo_host_wrapper: USE_NEW_API=true, IS_LIVE=0
+[02:17:39.953] Session_Key:[008669320260201021732921]- getOrderInfo_host_wrapper: REST API mode
+[02:17:39.953] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_Initialize: isLive=0, appId=8c3cdc588ff746599a0beb714b4dce3a, baseUrl=https://devswbillapi.wowtv.co.kr
+[02:17:39.969] Session_Key:[008669320260201021732921]- set_guide START AAAAA
+[02:17:39.969] Session_Key:[008669320260201021732921]- set_guide (4밴過(gZ)
+[02:17:39.969] Session_Key:[008669320260201021732921]- put_guide START
+[02:17:39.969] Session_Key:[008669320260201021732921]- put_guide if (lpmt->startvindex >= lpmt->vsu))
+[02:17:39.969] Session_Key:[008669320260201021732921]- add_guide() START
+[02:17:39.969] Session_Key:[008669320260201021732921]- add_guide() DEFALUT > DEFALUT
+[02:17:39.984] Session_Key:[008669320260201021732921]- add_guide() if (n > 0)
+[02:17:39.984] Session_Key:[008669320260201021732921]- add_guide() else
+[02:17:39.984] Session_Key:[008669320260201021732921]- put_guid if (lpmt->fType == VOC_ERROR) 그 외 
+[02:17:39.984] Session_Key:[008669320260201021732921]- set_guide END
+[02:17:39.984] Session_Key:[008669320260201021732921]- send_guide() 
+[02:17:39.984] Session_Key:[008669320260201021732921]- prepare_send_guide if (mode == NODTMF) lpmt->dtmfact = DA_NOT;
+[02:17:39.984] Session_Key:[008669320260201021732921]- send_guide() ==>   END 
+[02:17:40.000] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:40.000] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.000] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.000] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.000] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:40.000] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:40.000] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:40.016] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:40.016] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:40.016] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:40.016] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:40.016] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:40.016] Session_Key:[008669320260201021732921]- _win_set_playpara > if (lpmt->dtmfact & DA_NOT) 
+[02:17:40.031] Session_Key:[008669320260201021732921]- setTermCondi : 0, 
+[02:17:40.031] Session_Key:[008669320260201021732921]- _win_play(vi:0 , lpmt->vsu:1)
+[02:17:40.031] Session_Key:[008669320260201021732921]- _win_play > if (lpmt->voutp >= lpmt->vsu) vi = lpmt->voutp = lpmt->vsu (vi:0 , lpmt->vsu:1)
+[02:17:40.031] Session_Key:[008669320260201021732921]- _win_play()
+[02:17:40.031] Session_Key:[008669320260201021732921]-  File 재생 목록 File_index[0] FineName[VOC_FIXED], FileHandle[3][3]
+[02:17:40.031] Session_Key:[008669320260201021732921]- showIOTT>iottp[0] -> 4, 3, 20734, 42247
+[02:17:40.047] Session_Key:[008669320260201021732921]- _win_play > 재생 요청 중...
+[02:17:40.047] Session_Key:[008669320260201021732921]- PL_BatchInfoOrderReq_Process START (REST API)
+[02:17:40.047] Session_Key:[008669320260201021732921]- PL_GetBatchPaymentInfo - DNIS:6693, TEL:01024020684
+[02:17:40.047] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: ========== 정기결제정보 조회 시작 ==========
+[02:17:40.047] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: reqType=1, reqTypeVal=6693, phoneNo=01024020684, arsType=ARS
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GenerateAuthHeader: RequestString=8c3cdc588ff746599a0beb714b4dce3aPOST1769879860202601311717400620041
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GenerateAuthHeader: Signature=2jP/FlIRix0/i4RT8gB/Budo2Bte/uvCAKtxOrha59k=
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: ========== API 요청 시작 ==========
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: URL=https://devswbillapi.wowtv.co.kr/v1/payment/batch/getpayment/arsno_V2
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: Server=devswbillapi.wowtv.co.kr, Port=443
+[02:17:40.062] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: Endpoint=/v1/payment/batch/getpayment/arsno_V2
+[02:17:40.078] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: Authorization=BASIC ...(hidden) (masked)
+[02:17:40.078] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: Body={"reqType":1,"reqTypeVal":"6693","phoneNo":"01024020684","ARSType":"ARS"}
+[02:17:40.078] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: BodyLength=73
+[02:17:40.188] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: ========== API 응답 수신 ==========
+[02:17:40.188] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: StatusCode=200, ResponseLength=816
+[02:17:40.188] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: Response={"resultCode":"0","data":{"memberId":"eda9c2e5-7ee5-405e-ac77-713fe148e32e","orderNo":202602010105342,"nickName":"SW2637262148","packageId":103236,"itemName":"源?醫낆쿋 誘멸뎅二쇱떇 ?뺢린寃곗젣 39000??,"categoryId_2nd":"","pgCode":"A","merchantId":"T_arsstockwin2","mallIdSimple":"T_arsstockwin2","mallIdGeneral":"T_arsstockwin","payAmt":39000,"notiUrlSimple":"http://devswbilluser.wowtv.co.kr/Fillup/Allat/AllatCallBack","notiUrlGeneral":"http://devswbilluser.wowtv.co.kr/Fillup/Allat/AllatCallBack","billKey":"","billPassword":"","cardCompany":"","payAgreeFlag":"","purchaseLimitFlag":"1","batchPayType":0,"serviceEndMonth":"","serviceEndDay":"","serviceDivDay":"","serviceCheckFlag":"N","checkCompleteTime":"","CouponUseFlag":"N","CouponName":"","BonusCashUseFlag":"N","BonusCashUseAmt":0,"purchaseAmt":39000}}
+[02:17:40.203] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_HttpPost: ========== API 요청 완료 ==========
+[02:17:40.203] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: ========== 정기결제정보 조회 성공 ==========
+[02:17:40.203] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: memberId=eda9c2e5-7ee5-405e-ac77-713fe148e32e, orderNo=202602010105342
+[02:17:40.219] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: batchPayType=0, serviceDivDay=0
+[02:17:40.219] Session_Key:[008669320260201021732921]- [PayLetterAPI] PL_GetBatchPaymentInfo: payAmt=39000, purchaseAmt=39000
+[02:17:40.219] Session_Key:[008669320260201021732921]- Wow_REQ_Quithostio===START
+[02:17:40.219] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:40.234] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:40.234] Session_Key:[008669320260201021732921]- in_multifunc
+[02:17:40.234] Session_Key:[008669320260201021732921]- _win_in_multifunc STATE:2
+[02:17:40.234] Session_Key:[008669320260201021732921]- quitchan
+[02:17:40.250] Session_Key:[008669320260201021732921]- _win_quitchan
+[02:17:40.250] Session_Key:[008669320260201021732921]- PL_BatchInfoOrderReq_Process SUCCESS > 겹친 I/O 작업이 진행 중입니다.
+
+
+
+[02:17:40.250] Session_Key:[008669320260201021732921]- Wow_REQ_Quithostio _endthread
+[02:17:40.250] Session_Key:[008669320260201021732921]- PL_BatchInfoOrderReq_Process END (SUCCESS)
+[02:17:40.375] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:40.391] Session_Key:[008669320260201021732921]- process: State = ST_GUIDE, Event = TW_STOP (chanID:8)
+[02:17:40.391] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:40.391] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:40.391] Session_Key:[008669320260201021732921]- post_guide mode=1 START
+[02:17:40.391] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM
+[02:17:40.391] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE
+[02:17:40.406] Session_Key:[008669320260201021732921]- post_guide mode=1 lpmt->dtmftype == NODTM ==? SET SG_HOLDM:CAR_IDLE:POST_NET
+[02:17:40.406] Session_Key:[008669320260201021732921]- Invalid event retPostfunc START
+[02:17:40.406] Session_Key:[008669320260201021732921]- Invalid event retPostfunc END
+[02:17:40.406] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [0] 고객 주문 정보 안내 부
+[02:17:40.406] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [0] 동의서 안내 부> 파트너명()
+[02:17:40.406] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [0] 동의서 안내 부> SKIP_PARTNER_CONSENT=1, 동의 멘트 스킵
+[02:17:40.422] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [9] 고객 주문 정보 안내 부 > 정기결제상태 첫결제 > 0
+[02:17:40.422] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [9] 고객 주문 정보 안내 부 > 체험상품유무 없음> 
+[02:17:40.422] Session_Key:[008669320260201021732921]- ALLAT_WOWTV_Quick_getOrderInfo [9] 고객 주문 정보 안내 부> 상품정보 안내(SW2637262148::김종철 미국주식 정기결제 39000원:39000)> 확인 부
+[02:17:40.422] Session_Key:[008669320260201021732921]- send_guide() 
+[02:17:40.422] Session_Key:[008669320260201021732921]- prepare_send_guide  lpmt->dtmfact = DA_ANY;
+[02:17:40.438] Session_Key:[008669320260201021732921]- send_guide() ==>   END 
+[02:17:40.438] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:40.438] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.438] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.438] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:40.453] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:40.453] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:40.453] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:40.453] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:40.469] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:40.469] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:40.469] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:40.469] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:40.469] Session_Key:[008669320260201021732921]- _win_set_playpara  else 
+[02:17:40.484] Session_Key:[008669320260201021732921]- setTermCondi : 0, *#0123456789
+[02:17:40.484] Session_Key:[008669320260201021732921]- _win_play(vi:0 , lpmt->vsu:0)
+[02:17:40.484] Session_Key:[008669320260201021732921]- _win_play > if (lpmt->voutp >= lpmt->vsu) vi = lpmt->voutp = lpmt->vsu (vi:0 , lpmt->vsu:0)
+[02:17:40.484] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:40.484] Session_Key:[008669320260201021732921]- process: State = ST_GUIDE, Event = TW_EOF (chanID:8)
+[02:17:40.484] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:40.500] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:40.500] Session_Key:[008669320260201021732921]- post_guide mode=0 START
+[02:17:40.500] Session_Key:[008669320260201021732921]- post_guide mode=0 else if (lpmt->ppftbl[POST_PLAY].t_wait == P_NODTMF):else
+[02:17:40.500] Session_Key:[008669320260201021732921]- _win_get_digits START
+[02:17:40.500] Session_Key:[008669320260201021732921]- setTermCondi : 0, *#0123456789
+[02:17:50.595] Session_Key:[008669320260201021732921]- Unknown event (83).....ignored
+[02:17:50.595] Session_Key:[008669320260201021732921]- process: State = ST_DIGIT, Event = TW_IDTIME (chanID:8)
+[02:17:50.595] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:50.595] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:50.595] Session_Key:[008669320260201021732921]- dtmf_timeout() ==>   START 
+[02:17:50.595] Session_Key:[008669320260201021732921]- dtmf_timeout() ==>   if (mysend_tout != NULL) END 
+[02:17:50.595] Session_Key:[008669320260201021732921]- new_error()
+[02:17:50.595] Session_Key:[008669320260201021732921]- set_guide START AAAAA
+[02:17:50.595] Session_Key:[008669320260201021732921]- set_guide (\K!?)
+[02:17:50.595] Session_Key:[008669320260201021732921]- put_guide START
+[02:17:50.610] Session_Key:[008669320260201021732921]- put_guide if (lpmt->startvindex >= lpmt->vsu))
+[02:17:50.610] Session_Key:[008669320260201021732921]- set_fileguide  default case START
+[02:17:50.610] Session_Key:[008669320260201021732921]- set_fileguide  default case open_playfile(type(25),arg_ptr(\K!?) ) 
+[02:17:50.610] Session_Key:[008669320260201021732921]- arg_ptr==>\K!?
+[02:17:50.610] Session_Key:[008669320260201021732921]- VOC_ERROR(WAVE===>)
+[02:17:50.626] Session_Key:[008669320260201021732921]- VOC_WAVE===>ment==(ment/_common/common_audio/TimeOutout)
+[02:17:50.626] Session_Key:[008669320260201021732921]- open_Error_wave: .\voice\wave\ment/_common/common_audio/TimeOutout.wav ===> OK(File Handle:6)
+[02:17:50.626] Session_Key:[008669320260201021732921]- add_guide() START
+[02:17:50.626] Session_Key:[008669320260201021732921]- add_guide() FILE_PLAY > VOC_ERROR
+[02:17:50.641] Session_Key:[008669320260201021732921]- add_guide() if (n > 0)
+[02:17:50.641] Session_Key:[008669320260201021732921]- add_guide() if (lpmt->fType == VOC_ERROR)
+[02:17:50.641] Session_Key:[008669320260201021732921]- put_guid if (lpmt->fType == VOC_ERROR) 
+[02:17:50.641] Session_Key:[008669320260201021732921]- set_guide END
+[02:17:50.641] Session_Key:[008669320260201021732921]- Comm_Input_Timeout ----->reset_start
+[02:17:50.641] Session_Key:[008669320260201021732921]-  _win_play(void) START
+[02:17:50.657] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:50.657] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:50.657] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(1) 
+[02:17:50.657] Session_Key:[008669320260201021732921]-  _win_play(void) if (is_channelbusy(lpmt->chanID)) 통과
+[02:17:50.657] Session_Key:[008669320260201021732921]-  _win_play(void) if( (ATDV_LASTERR(lpmt->chdev)&EDX_BUSY) == EDX_BUSY) 통과
+[02:17:50.657] Session_Key:[008669320260201021732921]- err_varvp = &lpmt->err_varv; 통과
+[02:17:50.673] Session_Key:[008669320260201021732921]- _win_play =   chanID=8 , lpmt(0X076E3E40), port[8]=0X076E3E40
+[02:17:50.673] Session_Key:[008669320260201021732921]- _win_play = lpmt->chdev(28),lpmt->chanDN(8) ,port[8].chdev(28) 
+[02:17:50.673] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 START
+[02:17:50.673] Session_Key:[008669320260201021732921]- DTMF 버퍼 초기화 END
+[02:17:50.673] Session_Key:[008669320260201021732921]- _win_set_playpara 
+[02:17:50.673] Session_Key:[008669320260201021732921]- _win_set_playpara  else 
+[02:17:50.673] Session_Key:[008669320260201021732921]- setTermCondi : 0, *#0123456789
+[02:17:50.688] Session_Key:[008669320260201021732921]- showIOTT>iottp[0] -> 4, 6, 0, -1
+[02:17:50.688] Session_Key:[008669320260201021732921]- _win_play()==>if (err_varvp->io_fhandle > 0)
+[02:17:50.688] Session_Key:[008669320260201021732921]- _win_play()==>if (err_varvp->io_fhandle > 0) ==> if(lpmt->fType == VOC_ERROR)
+[02:17:50.688] Session_Key:[008669320260201021732921]- _win_play()==>if (err_varvp->io_fhandle > 0) ==> if(lpmt->fType == VOC_ERROR) > if (lpmt->err_vsu > 0)
+[02:17:55.048] Session_Key:[008669320260201021732921]- State = ST_TALKING, GCEvent = GCEV_DISCONNECTED
+[02:17:55.048] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(2) 
+[02:17:55.048] Session_Key:[008669320260201021732921]- hang_up() => stopchan()
+[02:17:55.048] Session_Key:[008669320260201021732921]- _win_is_channelbusy() => STATE(2) 
+[02:17:55.111] Session_Key:[008669320260201021732921]- Unknown event (81).....ignored
+[02:17:55.111] Session_Key:[008669320260201021732921]- process: State = ST_STOP, Event = TW_STOP (chanID:8)
+[02:17:55.111] Session_Key:[008669320260201021732921]- process: call_function
+[02:17:55.111] Session_Key:[008669320260201021732921]- call_function: call_srvp
+[02:17:55.111] Session_Key:[008669320260201021732921]- gc_hookon()=>gc_DropCall호출
+[02:17:55.204] Session_Key:[008669320260201021732921]- State = ST_TALKING, GCEvent = GCEV_DROPCALL
+[02:17:55.204] Session_Key:[008669320260201021732921]- ST_IDLE 클린채널해준다Start(state:13)
+[02:17:55.204] Session_Key:[008669320260201021732921]- clean_channel START
+[02:17:55.204] Session_Key:[008669320260201021732921]- sc_disconnectDTI() 이미 브릿지해제
+[02:17:55.204] Session_Key:[008669320260201021732921]- clean_channel > save_log 
+[02:17:55.220] Session_Key:[008669320260201021732921]- save_log START
+[02:17:55.220] Session_Key:[008669320260201021732921]- 1. 획득한 DLL이 기동 중인지 판단.(ALLAT_Stockwin_Billkey_New_Scenario.dll)
+[02:17:55.220] Session_Key:[008669320260201021732921]- 1. 획득한 DLL이 기동 중인 채널 ....
+[02:17:55.220] Session_Key:[008669320260201021732921]- if (bRet).(ALLAT_Stockwin_Billkey_New_Scenario.dll)
+[02:17:55.220] Session_Key:[008669320260201021732921]- DisConnectProcess START
+[02:17:55.235] Session_Key:[008669320260201021732921]- ~Destructor > Calling DisConnectProcess
+[02:17:55.235] Session_Key:[008669320260201021732921]- DisConnectProcess START
+[02:17:55.235] Session_Key:[008669320260201021732921]- Allat DB Access 동작 중.... 
+[02:17:55.235] Session_Key:[008669320260201021732921]- Allat DB Access 중지.... 
+[02:17:55.235] Session_Key:[008669320260201021732921]- sp_SubCallCnt3 START
+[02:17:55.267] Session_Key:[008669320260201021732921]- sp_SubCallCnt3 END
+[02:17:55.267] Session_Key:[008669320260201021732921]- DisConnectProcess END
+[02:17:55.267] Session_Key:[008669320260201021732921]- DLL{ALLAT_Stockwin_Billkey_New_Scenario.dll} Call Count(0)
+[02:17:55.267] Session_Key:[008669320260201021732921]- DLL{ALLAT_Stockwin_Billkey_New_Scenario.dll} if (g_pScenario[chan] == NULL) UnLoad 중 ....
+[02:17:55.267] Session_Key:[008669320260201021732921]- DLL{ALLAT_Stockwin_Billkey_New_Scenario.dll} UnLoad SUCCESS
+[02:17:55.282] Session_Key:[008669320260201021732921]- save_log END
+[02:17:55.282] Session_Key:[008669320260201021732921]- clean_channel END
+[02:17:55.282] Session_Key:[008669320260201021732921]- ST_IDLE 클린채널해준다END(state:1)(eventError:0)

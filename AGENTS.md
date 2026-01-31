@@ -259,6 +259,7 @@ int STDMETHODCALLTYPE jobArs(int state)
 | DB 스키마 | `claudedocs/DB_SCHEMA_ALLAT.md` | ALLAT 관련 테이블 스키마 |
 | 시나리오 명세 | `claudedocs/NEW_SPEC_SCENARIO.md` | ARS 시나리오별 음성 안내 및 흐름 정의 |
 | REST API 스펙 | `claudedocs/NEW_SPEC_PL_API.md` | PayLetter REST API 엔드포인트 및 응답 형식 |
+| **Billkey 구현 가이드** | `claudedocs/BILL_KEY_REQ.md` | **Quick 시나리오 기반 Billkey 구현 가이드 v2.0** (롤백, 동의스킵, 소멸자 안전성, 코드참조) |
 | Billkey REST API 구현 | `claudedocs/IMPL_BILLKEY_REST_API.md` | Billkey 시나리오 REST API 전환 구현 상세 |
 
 ## 자주 사용하는 패턴

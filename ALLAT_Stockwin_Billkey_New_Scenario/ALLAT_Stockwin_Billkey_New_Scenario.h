@@ -19,6 +19,7 @@ class CALLAT_WOWTV_Billkey_Easy_Scenario : public IScenario
 public:
 	int  STDMETHODCALLTYPE ScenarioInit(LPMTP *Port, char *ArsType);
 	int  STDMETHODCALLTYPE jobArs(/* [in] */int state);
+	int  DisConnectProcess();
 
 	// 데이터 베이스 접속 성공 여부
 	int m_DBAccess;
@@ -114,6 +115,26 @@ public:
 	int		m_nsub_amount;   // 정기결제 금액
 	char	m_szsub_has_trial[8 + 1];   // 체험 상품 유무 (Y: 체험상품 있는 상품, N: 체험상품 없는 상품)
 	char	m_szexpire_date[32 + 1];   // 상품 만료 일자 (yyyyMMdd 형식)
+
+// ========================================
+// REST API 지원 멤버 변수 (2026.02.01 추가)
+// ========================================
+volatile LONG m_bNeedRollback;         // 롤백 필요 플래그 (InterlockedExchange용)
+LONG m_bPaymentApproved;               // 결제 승인 상태
+BOOL m_bDisconnectProcessed;           // DisConnectProcess 중복 호출 방지
+
+int m_nPurchaseAmt;                    // 원가 (할인 전)
+char m_szCouponUseFlag[4];             // 쿠폰 사용 여부 (Y/N)
+char m_szCouponName[64];               // 쿠폰명
+char m_szBonusCashUseFlag[4];          // 보너스 캐시 사용 여부 (Y/N)
+int m_nBonusCashUseAmt;                // 보너스 캐시 사용 금액
+char m_szMemberId[48];                 // 회원 UUID
+char m_szCategoryId[20];               // 상품 카테고리 ID
+char m_szPurchaseLimitFlag[4];         // 구매 제한 플래그
+char m_szServiceCheckFlag[4];          // 서비스 점검 플래그
+char m_szPgCode[8];                    // PG 코드 (A=올앳, P=페이레터)
+int m_nServiceDivDay;                  // 남은 기간 (일) - C, D 케이스용
+char m_szTrialType[16];                // 무료체험 유형 (NOFREE, 1WEEK, 2WEEK, 1MONTH)
 
 private:
 

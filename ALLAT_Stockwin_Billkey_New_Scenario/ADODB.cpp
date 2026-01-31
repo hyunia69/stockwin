@@ -2271,3 +2271,91 @@ int getSMSOrderInfo_host(int holdm)
 
 	return(0);
 }
+
+int CADODB::GetFreeTrialAttrByDnis(CString szDnis, char* szAttrOut, int nAttrSize)
+{
+	if (szAttrOut == NULL || nAttrSize <= 0) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: Invalid output buffer", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: Invalid output buffer");
+		return 0;
+	}
+
+	memset(szAttrOut, 0x00, nAttrSize);
+	strncpy_s(szAttrOut, nAttrSize, "NOFREE", _TRUNCATE);
+
+	if (!GetDBCon()) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: DB connection failed", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: DB connection failed");
+		return 0;
+	}
+
+	try {
+		CString strQuery;
+		strQuery.Format(
+			"SELECT DNIS_DESCRIPTION FROM COMMON_DNIS_INFO "
+			"WHERE ARS_DNIS = '%s' AND USE_YN = 'Y'",
+			szDnis.GetString()
+		);
+
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: Query=%s", m_pScenario->nChan, strQuery.GetString()) : xprintf("GetFreeTrialAttrByDnis: Query=%s", strQuery.GetString());
+
+		if (!Open(strQuery.GetBuffer())) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: Query failed", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: Query failed");
+			return 0;
+		}
+
+		int nRecCount = GetRecCount();
+		if (nRecCount <= 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: DNIS=%s not found", m_pScenario->nChan, szDnis.GetString()) : xprintf("GetFreeTrialAttrByDnis: DNIS=%s not found", szDnis.GetString());
+			RSClose();
+			return 0;
+		}
+
+		_bstr_t bstrDescription;
+		if (GetRs(_variant_t(L"DNIS_DESCRIPTION"), bstrDescription) != 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: DNIS_DESCRIPTION field not found", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: DNIS_DESCRIPTION field not found");
+			RSClose();
+			return 0;
+		}
+
+		if (bstrDescription.length() == 0) {
+			m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: DNIS_DESCRIPTION is empty", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: DNIS_DESCRIPTION is empty");
+			RSClose();
+			return 1;
+		}
+
+		char szJsonBuffer[1024] = { 0 };
+		strncpy_s(szJsonBuffer, sizeof(szJsonBuffer), (char*)bstrDescription, _TRUNCATE);
+
+		char* pAttrStart = strstr(szJsonBuffer, "\"attr\"");
+		if (pAttrStart != NULL) {
+			char* pColon = strchr(pAttrStart, ':');
+			if (pColon != NULL) {
+				char* pQuote1 = strchr(pColon, '"');
+				if (pQuote1 != NULL) {
+					pQuote1++;
+					char* pQuote2 = strchr(pQuote1, '"');
+					if (pQuote2 != NULL) {
+						int nLen = (int)(pQuote2 - pQuote1);
+						if (nLen > 0 && nLen < nAttrSize) {
+							strncpy_s(szAttrOut, nAttrSize, pQuote1, nLen);
+							szAttrOut[nLen] = '\0';
+						}
+					}
+				}
+			}
+		}
+
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: DNIS=%s, attr=%s", m_pScenario->nChan, szDnis.GetString(), szAttrOut) : xprintf("GetFreeTrialAttrByDnis: DNIS=%s, attr=%s", szDnis.GetString(), szAttrOut);
+
+		RSClose();
+		return 1;
+
+	} catch (_com_error &e) {
+		PrintComError(e);
+		RSClose();
+		return 0;
+	} catch (...) {
+		m_pScenario != NULL ? xprintf("[CH:%03d] GetFreeTrialAttrByDnis: Unknown exception", m_pScenario->nChan) : xprintf("GetFreeTrialAttrByDnis: Unknown exception");
+		RSClose();
+		return 0;
+	}
+}

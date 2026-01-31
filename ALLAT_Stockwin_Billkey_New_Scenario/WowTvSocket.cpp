@@ -11,6 +11,7 @@
 #include    "Scenaio.h"
 #include    "AllatUtil.h"
 #include    "ALLAT_Stockwin_Billkey_New_Scenario.h"
+#include "PayLetterAPI.h"  // REST API 모듈 (정기결제 정보 조회)
 
 
 
@@ -1121,6 +1122,145 @@ unsigned int __stdcall Wow_InfoRodocReq_Process(void *data)
 	return 0;
 }
 
+unsigned int __stdcall PL_BatchInfoOrderReq_Process(void *data)
+{
+	int ch = 0;
+	int threadID;
+	LPMTP *lineTablePtr = (LPMTP *)data;
+	CALLAT_WOWTV_Billkey_Easy_Scenario *pScenario = 
+		(CALLAT_WOWTV_Billkey_Easy_Scenario *)(lineTablePtr->pScenario);
+	
+	ch = lineTablePtr->chanID;
+	threadID = lineTablePtr->threadID;
+	
+	xprintf("[CH:%03d] PL_BatchInfoOrderReq_Process START (REST API)", ch);
+	
+	memset(pScenario->m_szMx_issue_no, 0x00, sizeof(pScenario->m_szMx_issue_no));
+	memset(pScenario->m_szMx_name, 0x00, sizeof(pScenario->m_szMx_name));
+	memset(pScenario->m_szMx_id, 0x00, sizeof(pScenario->m_szMx_id));
+	memset(pScenario->m_szCC_name, 0x00, sizeof(pScenario->m_szCC_name));
+	memset(pScenario->m_szCC_Prod_Desc, 0x00, sizeof(pScenario->m_szCC_Prod_Desc));
+	memset(pScenario->m_szpsrtner_nm, 0x00, sizeof(pScenario->m_szpsrtner_nm));
+	memset(pScenario->m_szCC_Prod_Code, 0x00, sizeof(pScenario->m_szCC_Prod_Code));
+	memset(pScenario->m_szPhone_no, 0x00, sizeof(pScenario->m_szPhone_no));
+	memset(pScenario->m_szMx_opt, 0x00, sizeof(pScenario->m_szMx_opt));
+	memset(pScenario->m_szCC_email, 0X00, sizeof(pScenario->m_szCC_email));
+	memset(pScenario->m_sz_Shop_Pw, 0X00, sizeof(pScenario->m_sz_Shop_Pw));
+	pScenario->m_nAmount = 0;
+	memset(pScenario->m_szInstallment, 0x00, sizeof(pScenario->m_szInstallment));
+	memset(pScenario->m_szsub_status, 0X00, sizeof(pScenario->m_szsub_status));
+	memset(pScenario->m_szsub_has_trial, 0X00, sizeof(pScenario->m_szsub_has_trial));
+	memset(pScenario->m_szexpire_date, 0X00, sizeof(pScenario->m_szexpire_date));
+	pScenario->m_nsub_amount = 0;
+	memset(pScenario->m_szURL_YN, 0X00, sizeof(pScenario->m_szURL_YN));
+	memset(pScenario->m_szSHOP_RET_URL, 0X00, sizeof(pScenario->m_szSHOP_RET_URL));
+	
+	pScenario->m_nPurchaseAmt = 0;
+	memset(pScenario->m_szCouponUseFlag, 0x00, sizeof(pScenario->m_szCouponUseFlag));
+	memset(pScenario->m_szCouponName, 0x00, sizeof(pScenario->m_szCouponName));
+	memset(pScenario->m_szBonusCashUseFlag, 0x00, sizeof(pScenario->m_szBonusCashUseFlag));
+	pScenario->m_nBonusCashUseAmt = 0;
+	memset(pScenario->m_szMemberId, 0x00, sizeof(pScenario->m_szMemberId));
+	memset(pScenario->m_szCategoryId, 0x00, sizeof(pScenario->m_szCategoryId));
+	memset(pScenario->m_szPurchaseLimitFlag, 0x00, sizeof(pScenario->m_szPurchaseLimitFlag));
+	memset(pScenario->m_szServiceCheckFlag, 0x00, sizeof(pScenario->m_szServiceCheckFlag));
+	memset(pScenario->m_szPgCode, 0x00, sizeof(pScenario->m_szPgCode));
+	pScenario->m_nServiceDivDay = 0;
+	memset(pScenario->m_szTrialType, 0x00, sizeof(pScenario->m_szTrialType));
+	InterlockedExchange(&pScenario->m_bNeedRollback, FALSE);
+	pScenario->m_bPaymentApproved = FALSE;
+	pScenario->m_bDisconnectProcessed = FALSE;
+	
+	if (threadID != lineTablePtr->threadID) {
+		pScenario->m_bDnisInfo = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
+		Wow_REQ_Quithostio("PL_BatchInfoOrderReq_Process thread invalid", ch);
+		xprintf("[CH:%03d] PL_BatchInfoOrderReq_Process END (thread invalid)", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return -1;
+	}
+	
+#if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
+	CoInitializeEx(NULL, COINIT_MULTITHREADED);
+#else
+	CoInitialize(NULL);
+#endif
+	
+	PL_BatchPaymentInfo plInfo;
+	char szReqTypeVal[32] = { 0 };
+	char szOrderNo[80] = { 0 };
+	PL_InitBatchPaymentInfo(&plInfo);
+	
+	strncpy_s(szReqTypeVal, sizeof(szReqTypeVal), pScenario->szDnis, _TRUNCATE);
+	
+	xprintf("[CH:%03d] PL_GetBatchPaymentInfo - DNIS:%s, TEL:%s", ch, szReqTypeVal, pScenario->m_szInputTel);
+	
+	if (!PL_GetBatchPaymentInfo(1, szReqTypeVal, pScenario->m_szInputTel, "ARS", &plInfo)) {
+		char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
+		PL_GetLastError(errMsg, sizeof(errMsg));
+		xprintf("[CH:%03d] PL_GetBatchPaymentInfo failed - %s", ch, errMsg);
+		pScenario->m_bDnisInfo = -1;
+		(*port)[ch].ppftbl[POST_NET].postcode = HI_COMM;
+		Wow_REQ_Quithostio("PL_BatchInfoOrderReq_Process API call failed", ch);
+		CoUninitialize();
+		xprintf("[CH:%03d] PL_BatchInfoOrderReq_Process END (API failed)", ch);
+		_endthreadex((unsigned int)(*port)[ch].m_hThread);
+		return -1;
+	}
+	
+	sprintf_s(szOrderNo, sizeof(szOrderNo), "%lld", plInfo.orderNo);
+	strncpy_s(pScenario->m_szMx_issue_no, sizeof(pScenario->m_szMx_issue_no), szOrderNo, _TRUNCATE);
+	
+	strncpy_s(pScenario->m_szMemberId, sizeof(pScenario->m_szMemberId), plInfo.memberId, _TRUNCATE);
+	strncpy_s(pScenario->m_szCC_name, sizeof(pScenario->m_szCC_name), plInfo.nickName, _TRUNCATE);
+	strncpy_s(pScenario->m_szMx_id, sizeof(pScenario->m_szMx_id), plInfo.memberId, _TRUNCATE);
+	
+	strncpy_s(pScenario->m_szCC_Prod_Code, sizeof(pScenario->m_szCC_Prod_Code), plInfo.packageId, _TRUNCATE);
+	strncpy_s(pScenario->m_szCC_Prod_Desc, sizeof(pScenario->m_szCC_Prod_Desc), plInfo.itemName, _TRUNCATE);
+	strncpy_s(pScenario->m_szCategoryId, sizeof(pScenario->m_szCategoryId), plInfo.categoryId_2nd, _TRUNCATE);
+	
+	pScenario->m_nAmount = plInfo.payAmt;
+	pScenario->m_nPurchaseAmt = plInfo.purchaseAmt;
+	pScenario->m_nsub_amount = plInfo.payAmt;
+	
+	sprintf_s(pScenario->m_szsub_status, sizeof(pScenario->m_szsub_status), "%d", plInfo.batchPayType);
+	sprintf_s(pScenario->m_szexpire_date, sizeof(pScenario->m_szexpire_date), "%s%s", plInfo.serviceEndMonth, plInfo.serviceEndDay);
+	pScenario->m_nServiceDivDay = plInfo.serviceDivDay;
+	
+	strncpy_s(pScenario->m_szCouponUseFlag, sizeof(pScenario->m_szCouponUseFlag), plInfo.couponUseFlag, _TRUNCATE);
+	strncpy_s(pScenario->m_szCouponName, sizeof(pScenario->m_szCouponName), plInfo.couponName, _TRUNCATE);
+	strncpy_s(pScenario->m_szBonusCashUseFlag, sizeof(pScenario->m_szBonusCashUseFlag), plInfo.bonusCashUseFlag, _TRUNCATE);
+	pScenario->m_nBonusCashUseAmt = plInfo.bonusCashUseAmt;
+	
+	strncpy_s(pScenario->m_szPurchaseLimitFlag, sizeof(pScenario->m_szPurchaseLimitFlag), plInfo.purchaseLimitFlag, _TRUNCATE);
+	strncpy_s(pScenario->m_szServiceCheckFlag, sizeof(pScenario->m_szServiceCheckFlag), plInfo.serviceCheckFlag, _TRUNCATE);
+	strncpy_s(pScenario->m_szPgCode, sizeof(pScenario->m_szPgCode), plInfo.pgCode, _TRUNCATE);
+	
+	if (strcmp(plInfo.couponUseFlag, "Y") == 0 || plInfo.bonusCashUseAmt > 0) {
+		InterlockedExchange(&pScenario->m_bNeedRollback, TRUE);
+		xprintf("[CH:%03d] Rollback flag set (coupon:%s, bonus:%d)", 
+			ch, plInfo.couponUseFlag, plInfo.bonusCashUseAmt);
+	}
+	
+	if (pScenario->m_AdoDb != NULL) {
+		CADODB tempDb(pScenario);
+		if (tempDb.GetFreeTrialAttrByDnis(pScenario->szDnis, pScenario->m_szTrialType, sizeof(pScenario->m_szTrialType)) > 0) {
+			xprintf("[CH:%03d] TrialType from DNIS: %s", ch, pScenario->m_szTrialType);
+		}
+	}
+	
+	pScenario->m_bDnisInfo = 1;
+	(*port)[ch].ppftbl[POST_NET].postcode = HI_OK;
+	
+	Wow_REQ_Quithostio("PL_BatchInfoOrderReq_Process SUCCESS", ch);
+	
+	CoUninitialize();
+	xprintf("[CH:%03d] PL_BatchInfoOrderReq_Process END (SUCCESS)", ch);
+	
+	_endthreadex((unsigned int)(*port)[ch].m_hThread);
+	return 0;
+}
+
 int getTcpOrderInfo_host(int holdm)
 {
 	//초기화	
@@ -1148,7 +1288,60 @@ int getTcpOrderInfo_host(int holdm)
 	return(0);
 }
 
-// 간편 결제 결제키 해지 통보 쓰레드 함수
+int getOrderInfo_BatchAPI_host(int holdm)
+{
+	((CALLAT_WOWTV_Billkey_Easy_Scenario *)((*lpmt)->pScenario))->m_DBAccess = 0;
+	if (holdm != 0) {
+		if (new_guide) new_guide();
+		(*lpmt)->trials = 0;
+		(*lpmt)->Hmusic = HM_LOOP;
+		if (set_guide) set_guide(holdm);
+		if (send_guide) send_guide(NODTMF);
+	}
+	
+	(*lpmt)->ppftbl[POST_NET].postcode = HI_NCMPLT;
+	
+	((CALLAT_WOWTV_Billkey_Easy_Scenario *)((*lpmt)->pScenario))->m_hThread =
+		(HANDLE)_beginthreadex(NULL, 0, PL_BatchInfoOrderReq_Process, (LPVOID)(*lpmt), 0,
+			&(((CALLAT_WOWTV_Billkey_Easy_Scenario *)((*lpmt)->pScenario))->threadID));
+	
+	return 0;
+}
+
+int getOrderInfo_host_wrapper(int holdm)
+{
+	char szUseNewAPI[8] = { 0 };
+	char szIsLive[8] = { 0 };
+	int isLive = 0;
+
+	GetPrivateProfileStringA("PAYLETTER_API", "USE_NEW_API", "false",
+		szUseNewAPI, sizeof(szUseNewAPI), PARAINI);
+	GetPrivateProfileStringA("PAYLETTER_API", "IS_LIVE", "false",
+		szIsLive, sizeof(szIsLive), PARAINI);
+
+	isLive = (_stricmp(szIsLive, "true") == 0) ? 1 : 0;
+
+	xprintf("[CH:%03d] getOrderInfo_host_wrapper: USE_NEW_API=%s, IS_LIVE=%s",
+		(*lpmt)->chanID, szUseNewAPI, szIsLive);
+
+	if (_stricmp(szUseNewAPI, "true") == 0) {
+		xprintf("[CH:%03d] getOrderInfo_host_wrapper: REST API mode", (*lpmt)->chanID);
+
+		if (!PL_Initialize(PARAINI, isLive)) {
+			char errMsg[PL_MAX_ERROR_MSG + 1] = { 0 };
+			PL_GetLastError(errMsg, sizeof(errMsg));
+			xprintf("[CH:%03d] getOrderInfo_host_wrapper: PL_Initialize failed: %s", (*lpmt)->chanID, errMsg);
+			xprintf("[CH:%03d] getOrderInfo_host_wrapper: Fallback to TCP mode", (*lpmt)->chanID);
+			return getTcpOrderInfo_host(holdm);
+		}
+
+		return getOrderInfo_BatchAPI_host(holdm);
+	}
+
+	xprintf("[CH:%03d] getOrderInfo_host_wrapper: TCP mode", (*lpmt)->chanID);
+	return getTcpOrderInfo_host(holdm);
+}
+
 unsigned int __stdcall Wow_Billdelete_Process(void *data)
 {
 	int			ch = 0;
